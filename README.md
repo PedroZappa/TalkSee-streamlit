@@ -66,7 +66,7 @@ ___
 
 - The front-end web interface will be built using `Streamlit`;
 
-- Will `record audio` input from the user using a `Streamlit sidebar button` powered by streamlit-webrtc package ;
+- Will get `live` or `pre-recorded audio` from the user using the `streamlit-webrtc` package ;
 
 - The text will be rendered in the body of the app.
 
