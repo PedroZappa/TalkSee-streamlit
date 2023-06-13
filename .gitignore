@@ -2,3 +2,4 @@
 .DS_Store
 # Ignore models
 *.pt
+Zedro.wav

@@ -54,9 +54,11 @@ ___
 
 - Build a simple responsive interface with `Streamlit`;
 
-- Structure the app with proper separation of concerns;
+- Receive `audio input` from the user, either `live` or `pre-recorded`;
 
-- Learn about `speech recognition`;
+- Learn about implementing `speech recognition`;
+
+- `Transcribe` the `audio` to `text`;
 
 ___
 
