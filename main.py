@@ -8,13 +8,22 @@ def main():
 
     
     # Get user input
-    ## Record Live Audio
-    
-    ## Upload Audio file w/ Streamlit
-    audio_file = st.file_uploader(
-        "Upload Audio File", 
-        type=["wav", "mp3", "m4a"]
+    ## Select Input Mode
+    input_type = st.sidebar.radio(
+        'Input Mode',
+        ('Mic', 'File')
     )
+    
+    if input_type == 'Mic':
+        ## Record Live Audio
+        st.write('Input Mode: Mic')
+        ...
+    else:
+        ## Upload Audio file w/ Streamlit
+        audio_file = st.file_uploader(
+            "Upload Audio File", 
+            type=["wav", "mp3", "m4a"]
+        )
     
     
     # Load WhisperAI model
@@ -31,14 +40,12 @@ def main():
             | medium |   769 M    |    `medium.en`     |      `medium`      |     ~5 GB     |      ~2x       |
             | large  |   1550 M   |        N/A         |      `large`       |    ~10 GB     |       1x       |
         """ 
-    )
-    ## 
+    ) 
     
     
     # Transcribe audio file
     
     # Print results
-    
     ...
 
 
