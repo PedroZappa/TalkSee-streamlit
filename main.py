@@ -7,6 +7,8 @@ import torch
 import pyaudio
 import wave
 from tqdm.auto import tqdm
+import numpy as np
+
 
 # Load env variables from .env file
 load_dotenv()
@@ -41,7 +43,9 @@ print("stop_rec: ", st.session_state.stop_rec)
 
 
 def main():
-    global saved_audio
+    global audio_file
+    
+    audio_file = None
     
     # Check if CUDA is available
     torch.cuda.is_available()
@@ -54,6 +58,50 @@ def main():
     # Streamlit UI: Title
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
     st.sidebar.title("🗣 ⇢ 👀")
+    
+    
+    # Load WhisperAI model
+    ## Select model
+    model = None
+    whisper_selected = st.sidebar.selectbox(
+        'Available Multilingual Models',
+        ('tiny', 'base', 'small', 'medium', 'large', 'large-v2'),
+        help="""
+            |  Size  | Parameters | Multilingual model | Required VRAM | Relative speed |
+            |:------:|:----------:|:------------------:|:-------------:|:--------------:|
+            |  tiny  |    39 M    |       `tiny`       |     ~1 GB     |      ~32x      |
+            |  base  |    74 M    |       `base`       |     ~1 GB     |      ~16x      |
+            | small  |   244 M    |      `small`       |     ~2 GB     |      ~6x       |
+            | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
+            | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
+        """
+    )
+    whisper_file = os.path.join(models_path, f"{whisper_selected}.pt")
+    print(whisper_file)
+    
+    # Check if selected model exists
+    if not whisper_selected:
+        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
+    else:
+        st.sidebar.success(f"Whisper Selected: {whisper_selected}", icon="✅")
+        
+        ## Check if select model exists in models directory
+        if not os.path.exists(whisper_file):
+            st.warning(
+                f"Model {whisper_selected} not found in {models_path}.",
+                icon="🚨"
+            )
+            # progress_text = f"Downloading Whisper {whisper_selected} model..."
+            # whisper_progress = st.progress(0, text=progress_text)
+            
+            # Load Model
+            model = load_whisper(whisper_selected, DEVICE, models_path)
+            
+            # Progress Update
+            # for percent in tqdm():
+            #     time.sleep(0.1)
+    
+    model = load_whisper(whisper_selected, DEVICE, models_path)
     
     
     # Get user input
@@ -86,13 +134,16 @@ def main():
         #     st.session_state.stop_rec = True
         
             # Render Playback Audio File
-            if recorded_audio:
+            audio_file = load_audio_file("output.wav")
+            
+            if audio_file.size > 0:
                 # Playback Audio File
                 st.sidebar.header("Play Recorded Audio File")
                 st.sidebar.audio(
-                    data="output.wav",
-                    format="audio/wav",  
-                )
+                    audio_file,
+                    format="audio/wav",
+                    sample_rate=RATE,
+                )     
                 
     else:
         ## Upload Pre-Recorded Audio file
@@ -106,49 +157,11 @@ def main():
             # Render Playback Audio File
             st.sidebar.header("Play Uploaded Audio File")
             st.sidebar.audio(audio_file)
-    
-    
-    # Load WhisperAI model
-    ## Select model
-    whisper_selected = st.sidebar.selectbox(
-        'Available Multilingual Models',
-        ('', 'tiny', 'base', 'small', 'medium', 'large', 'large-v2'),
-        help="""
-            |  Size  | Parameters | Multilingual model | Required VRAM | Relative speed |
-            |:------:|:----------:|:------------------:|:-------------:|:--------------:|
-            |  tiny  |    39 M    |       `tiny`       |     ~1 GB     |      ~32x      |
-            |  base  |    74 M    |       `base`       |     ~1 GB     |      ~16x      |
-            | small  |   244 M    |      `small`       |     ~2 GB     |      ~6x       |
-            | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
-            | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
-        """
-    )
-    whisper_file = os.path.join(models_path, f"{whisper_selected}.pt")
-   
-    
-    # Check if selected model exists
-    if not whisper_selected:
-        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
-    else:
-        st.sidebar.success(f"Whisper Selected: {whisper_selected}", icon="✅")
-        
-        ## Check if select model exists in models directory
-        if not os.path.exists(whisper_file):
-            st.warning(
-                f"Model {whisper_selected} not found in {models_path}.",
-                icon="🚨"
-            )
-            # progress_text = f"Downloading Whisper {whisper_selected} model..."
-            # whisper_progress = st.progress(0, text=progress_text)
             
-            # Load Model
-            load_whisper(whisper_selected, DEVICE)
-            
-            # Progress Update
-            # for percent in tqdm():
-            #     time.sleep(0.1)
+            print(audio_file)
     
-    load_whisper(whisper_selected, DEVICE)
+    
+    
     
     # Transcribe audio file
     if st.sidebar.button("Transcribe!"):
@@ -168,18 +181,20 @@ def main():
     ...
 
 
-def load_whisper(whisper_selected, DEVICE):
+def load_whisper(whisper_selected, device, models_path):
     ## Load user selected model
     if whisper_selected:
         model = whisper.load_model(
             whisper_selected,
-            device=DEVICE,
+            device=device,
             download_root=models_path
         )
            
         # show loaded model if selected
-        if model_file:
+        if model:
             st.sidebar.text(f"Whisper {whisper_selected} model loaded")
+        
+        return model
 
 
 def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
@@ -205,7 +220,10 @@ def record_audio(stream, rate, frames_per_buffer):
     
     # Record Audio input
     for i in range(int(rate / frames_per_buffer * seconds)):
-        data = stream.read(frames_per_buffer)
+        data = stream.read(
+            frames_per_buffer, 
+            exception_on_overflow=False
+        )
         frames.append(data)  
         
         # Check if the "Stop" button has been clicked
@@ -223,6 +241,7 @@ def record_audio(stream, rate, frames_per_buffer):
     
     return frames 
 
+
 def save_audio(p, channels, format, rate, frames):
     # Save Recorded Audio to file
     with wave.open("output.wav", "wb") as file:
@@ -234,6 +253,22 @@ def save_audio(p, channels, format, rate, frames):
     
     return file
     
+
+def load_audio_file(input) :
+    # Open audio file
+    with wave.open('output.wav', 'rb') as file:
+        # Audio Length
+        audio_data = file.getnframes() / file.getframerate()
+        print(f"Loaded audio file length: {audio_data}")
+        
+        # Read Audio Frames
+        frames = file.readframes(-1)
+        print("Types of frames object:", type(frames), type(frames[0]))
+        
+        # Convert frames to NumPy array
+        audio_array = np.frombuffer(frames, dtype=np.int16)
+        
+    return audio_array
     
 
 # Run
