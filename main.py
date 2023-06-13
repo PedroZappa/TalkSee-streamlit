@@ -4,6 +4,7 @@ import whisper
 import time
 import os
 import torch
+from tqdm.auto import tqdm
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,7 +19,9 @@ model_file = ''
 
 def main():
     # Streamlit UI: Title
-    st.title("TalkSee : 🗣 ⇢ 👀")
+    st.title("🗣 ⇢ TalkSee ⇢ 👀")
+    # st.sidebar.title("TalkSee")
+    st.sidebar.title("🗣 ⇢ 👀")
 
     # Check if CUDA is available
     torch.cuda.is_available()
@@ -27,9 +30,12 @@ def main():
     
     # Get user input
     ## Select Input Mode
+    st.sidebar.header("Select Input Mode")
     input_type = st.sidebar.radio(
         'Select Input Mode',
-        ('Mic', 'File')
+        ('Mic', 'File'),
+        label_visibility='collapsed',
+        horizontal=True
     )
     
     if input_type == 'Mic':
@@ -45,6 +51,10 @@ def main():
             # Supported file types
             type=["wav", "mp3", "m4a"]
         )
+        if audio_file:
+            # Playback Audio File
+            st.sidebar.header("Play Uploaded Audio File")
+            st.sidebar.audio(audio_file)
     
     # Load WhisperAI model
     ## Select model
@@ -52,13 +62,13 @@ def main():
         'Available Multilingual Models',
         ('', 'tiny', 'base', 'small', 'medium', 'large', 'large-v2'),
         help="""
-            |  Size  | Parameters | English-only model | Multilingual model | Required VRAM | Relative speed |
-            |:------:|:----------:|:------------------:|:------------------:|:-------------:|:--------------:|
-            |  tiny  |    39 M    |     `tiny.en`      |       `tiny`       |     ~1 GB     |      ~32x      |
-            |  base  |    74 M    |     `base.en`      |       `base`       |     ~1 GB     |      ~16x      |
-            | small  |   244 M    |     `small.en`     |      `small`       |     ~2 GB     |      ~6x       |
-            | medium |   769 M    |    `medium.en`     |      `medium`      |     ~5 GB     |      ~2x       |
-            | large  |   1550 M   |        N/A         |      `large`       |    ~10 GB     |       1x       |
+            |  Size  | Parameters | Multilingual model | Required VRAM | Relative speed |
+            |:------:|:----------:|:------------------:|:-------------:|:--------------:|
+            |  tiny  |    39 M    |       `tiny`       |     ~1 GB     |      ~32x      |
+            |  base  |    74 M    |       `base`       |     ~1 GB     |      ~16x      |
+            | small  |   244 M    |      `small`       |     ~2 GB     |      ~6x       |
+            | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
+            | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
         """ 
     )
     whisper_file = os.path.join(models_path, f"{whisper_selected}.pt")
@@ -75,33 +85,20 @@ def main():
                 f"Model {whisper_selected} not found in {models_path}.",
                 icon="🚨"
             )
-            progress_text = f"Downloading Whisper {whisper_selected} model..."
-            whisper_progress = st.progress(0, text=progress_text)
+            # progress_text = f"Downloading Whisper {whisper_selected} model..."
+            # whisper_progress = st.progress(0, text=progress_text)
+            
+            # Load Model
+            load_whisper(whisper_selected, DEVICE)
             
             # Progress Update
-            for percent_complete in range(100):
-                time.sleep(0.1)
-                # Update progress text
-                # progress_text = f"Downloading Whisper {whisper_selected} model... ({percentage_complete}% complete)"
-                # Update progress bar
-                whisper_progress.progress(percentage_complete + 1)
+            # for percent in tqdm():
+            #     time.sleep(0.1)
+                
     else:
         st.sidebar.warning(f"Select a model! ⏫", icon="🚨")
     
-    
-    ## Load user selected model
-    if whisper_selected:
-        model = whisper.load_model(
-            whisper_selected,
-            device=DEVICE,
-            download_root=models_path
-        )
-        
-                
-        # show loaded model if selected
-        if model_file:
-            st.sidebar.text(f"Whisper {whisper_selected} model loaded")
-    
+    load_whisper(whisper_selected, DEVICE)
     
     # Transcribe audio file
     if st.sidebar.button("Transcribe!"):
@@ -120,6 +117,19 @@ def main():
     # Print results
     ...
 
+
+def load_whisper(whisper_selected, DEVICE):
+    ## Load user selected model
+    if whisper_selected:
+        model = whisper.load_model(
+            whisper_selected,
+            device=DEVICE,
+            download_root=models_path
+        )
+           
+        # show loaded model if selected
+        if model_file:
+            st.sidebar.text(f"Whisper {whisper_selected} model loaded")
 
 # Run
 if __name__ == "__main__":
