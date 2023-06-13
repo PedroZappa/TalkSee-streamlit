@@ -4,29 +4,39 @@ import whisper
 import time
 import os
 import torch
+import pyaudio
+import wave
 from tqdm.auto import tqdm
 
-# Load environment variables from .env file
+# Load env variables from .env file
 load_dotenv()
 
 # Setup Model Storage
 # models_path = os.getenv("MODELS_DIR")
 models_path = os.environ.get("MODELS_PATH")
-# models_path = "models/"
+# give write permission on models_path
 os.chmod(models_path, 0o775)
-
 model_file = ''
+
+# AUDIO CONSTANTS
+FRAMES_PER_BUFFER = 3200
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 16000
+
 
 def main():
     # Streamlit UI: Title
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
-    # st.sidebar.title("TalkSee")
     st.sidebar.title("🗣 ⇢ 👀")
 
     # Check if CUDA is available
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     st.sidebar.text(f"Torch Status: {DEVICE}")
+    
+    # Setup Audio Stream
+    stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Get user input
     ## Select Input Mode
@@ -37,13 +47,33 @@ def main():
         label_visibility='collapsed',
         horizontal=True
     )
+    ## Record Button
+    if input_type == 'Mic':
+        st.sidebar.header("Record Audio")
+
+        # if button clicked
+        if st.sidebar.button("Record"):
+            # Start Audio Recording 
+            recorded_audio = record_audio(stream, RATE, FRAMES_PER_BUFFER)
+        
     
     if input_type == 'Mic':
-        ## Record Live Audio
+        ## Live Audio
         st.write('Input Mode: Mic')
         #
-        # Implement MIC input
-        #
+        # Open file for recording
+        print("Recording...")
+        
+        
+        print("Finished Recording")
+        
+        # Save Recorded Audio File
+        # with wave.open() as file:
+            
+        
+        # Calculate audio length
+        # duration = file.getnframes() / file.getframerate()
+        # print(f"Audio file duration: {duration}")    
     else:
         ## Upload Audio file w/ Streamlit
         audio_file = st.file_uploader(
@@ -75,7 +105,10 @@ def main():
     print(f"Whisper file:", whisper_file)
     
     # Check if selected model exists
-    if whisper_selected:
+    if not whisper_selected:
+        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")
+                
+    else:
         st.sidebar.success(f"Whisper Selected: {whisper_selected}", icon="✅")
         
         ## Check if select model exists in models directory
@@ -94,9 +127,6 @@ def main():
             # Progress Update
             # for percent in tqdm():
             #     time.sleep(0.1)
-                
-    else:
-        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")
     
     load_whisper(whisper_selected, DEVICE)
     
@@ -130,6 +160,32 @@ def load_whisper(whisper_selected, DEVICE):
         # show loaded model if selected
         if model_file:
             st.sidebar.text(f"Whisper {whisper_selected} model loaded")
+
+
+def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
+    ## Create PyAudio
+    p = pyaudio.PyAudio()
+    ## Init Stream
+    stream = p.open(
+        format=format, 
+        channels=channels, 
+        rate=rate, 
+        input=True, 
+        frames_per_buffer=frames_per_buffer
+    )
+    return stream
+
+
+def record_audio(stream, rate, frames_per_buffer):
+    seconds = 10
+    frames = []
+    
+    # Record Audio input
+    for i in tqdm(range(int(rate / frames_per_buffer * seconds))):
+        data = stream.read(frames_per_buffer)
+        frames.append(data)   
+    return data 
+    
 
 # Run
 if __name__ == "__main__":
