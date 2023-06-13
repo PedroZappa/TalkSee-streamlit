@@ -26,6 +26,11 @@ CHANNELS = 1
 RATE = 16000
 
 
+# Initialize Session State
+if 'stop_rec' not in st.session_state:
+    st.session_state['stop_rec'] = 'False'
+
+
 def main():
     # Streamlit UI: Title
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
@@ -49,9 +54,6 @@ def main():
         horizontal=True
     )
     
-    # Initialize recording state
-    if "stop_rec" not in st.session_state:
-        st.session_state.stop_rec = False
             
     ## MIC or FILE
     if input_type == 'Mic':
