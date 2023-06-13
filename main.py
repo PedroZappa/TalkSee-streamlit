@@ -28,21 +28,33 @@ RATE = 16000
 
 # Initialize Session State
 if 'stop_rec' not in st.session_state:
-    st.session_state['stop_rec'] = 'False'
+    st.session_state.stop_rec = False
+
+# Change Session State
+def stop_rec():
+    # On button clicked
+    st.session_state.stop_rec = True
+
+# DEBUG Session State
+print("Session State: ", st.session_state)
+print("stop_rec: ", st.session_state.stop_rec)
 
 
 def main():
-    # Streamlit UI: Title
-    st.title("🗣 ⇢ TalkSee ⇢ 👀")
-    st.sidebar.title("🗣 ⇢ 👀")
-
+    global saved_audio
+    
     # Check if CUDA is available
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     st.sidebar.text(f"Torch Status: {DEVICE}")
     
     # Setup Audio Stream
-    stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
+    p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
+    
+    # Streamlit UI: Title
+    st.title("🗣 ⇢ TalkSee ⇢ 👀")
+    st.sidebar.title("🗣 ⇢ 👀")
+    
     
     # Get user input
     ## Select Input Mode
@@ -53,7 +65,6 @@ def main():
         label_visibility='collapsed',
         horizontal=True
     )
-    
             
     ## MIC or FILE
     if input_type == 'Mic':
@@ -62,22 +73,37 @@ def main():
         # if button clicked
         if st.sidebar.button("Record", key='record_btn'):
             # Start Audio Recording 
-            recorded_audio = record_audio(stream, RATE, FRAMES_PER_BUFFER)  
+            recorded_audio = record_audio(stream, RATE, FRAMES_PER_BUFFER) 
+            # Save Recording to a file
+            save_audio(p, CHANNELS, FORMAT, RATE, recorded_audio) 
     
         # Create Stop Recording Button
-        if st.sidebar.button("Stop", key="stop_btn"):
-            st.session_state.stop_rec = True
+        # if st.sidebar.button(
+        #     "Stop", 
+        #     key="stop_btn",
+        #     on_click=stop_rec
+        #     or st.session_state.stop_rec):
+        #     st.session_state.stop_rec = True
         
-        
+            # Render Playback Audio File
+            if recorded_audio:
+                # Playback Audio File
+                st.sidebar.header("Play Recorded Audio File")
+                st.sidebar.audio(
+                    data="output.wav",
+                    format="audio/wav",  
+                )
+                
     else:
-        ## Upload Audio file w/ Streamlit
+        ## Upload Pre-Recorded Audio file
         audio_file = st.file_uploader(
             "Upload Audio File", 
+            key="upload_file",
             # Supported file types
             type=["wav", "mp3", "m4a"]
         )
         if audio_file:
-            # Playback Audio File
+            # Render Playback Audio File
             st.sidebar.header("Play Uploaded Audio File")
             st.sidebar.audio(audio_file)
     
@@ -102,13 +128,11 @@ def main():
     
     # Check if selected model exists
     if not whisper_selected:
-        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")
-                
+        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
     else:
         st.sidebar.success(f"Whisper Selected: {whisper_selected}", icon="✅")
         
         ## Check if select model exists in models directory
-        # print(f"Selected model: {model_file}")
         if not os.path.exists(whisper_file):
             st.warning(
                 f"Model {whisper_selected} not found in {models_path}.",
@@ -140,7 +164,7 @@ def main():
         else:
             st.sidebar.error("Please input a valid audio file!")
     
-    # Print results
+    # Generate Image ( Extra GOAL )
     ...
 
 
@@ -169,16 +193,18 @@ def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
         input=True, 
         frames_per_buffer=frames_per_buffer
     )
-    return stream
+    return p, stream
 
 
 def record_audio(stream, rate, frames_per_buffer):
-    seconds = 10
+    # Time to record
+    seconds = 6
+    # Audio frames buffer
     frames = []
     print("Recording...")
     
     # Record Audio input
-    for i in tqdm(range(int(rate / frames_per_buffer * seconds))):
+    for i in range(int(rate / frames_per_buffer * seconds)):
         data = stream.read(frames_per_buffer)
         frames.append(data)  
         
@@ -195,10 +221,20 @@ def record_audio(stream, rate, frames_per_buffer):
     else:
         print("Recording Stopped")
     
-    return data 
+    return frames 
 
-def save_audio():
-    ...
+def save_audio(p, channels, format, rate, frames):
+    # Save Recorded Audio to file
+    with wave.open("output.wav", "wb") as file:
+        file.setnchannels(channels)
+        file.setsampwidth(p.get_sample_size(format))
+        file.setframerate(rate)
+        # combine all elements in frames list into a binary string
+        file.writeframes(b"".join(frames))
+    
+    return file
+    
+    
 
 # Run
 if __name__ == "__main__":

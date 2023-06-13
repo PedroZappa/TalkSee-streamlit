@@ -1,5 +1,8 @@
+# Ignore Secrets
 .env
 .DS_Store
-# Ignore models
+# Ignore Models
 *.pt
+# Ignore Audio Files
 Zedro.wav
+output.wav
