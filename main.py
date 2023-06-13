@@ -17,6 +17,7 @@ models_path = os.environ.get("MODELS_PATH")
 # give write permission on models_path
 os.chmod(models_path, 0o775)
 model_file = ''
+whisper_file = ''
 
 # AUDIO CONSTANTS
 FRAMES_PER_BUFFER = 3200
@@ -47,33 +48,25 @@ def main():
         label_visibility='collapsed',
         horizontal=True
     )
-    ## Record Button
+    
+    # Initialize recording state
+    if "stop_rec" not in st.session_state:
+        st.session_state.stop_rec = False
+            
+    ## MIC or FILE
     if input_type == 'Mic':
         st.sidebar.header("Record Audio")
-
+        
         # if button clicked
-        if st.sidebar.button("Record"):
+        if st.sidebar.button("Record", key='record_btn'):
             # Start Audio Recording 
-            recorded_audio = record_audio(stream, RATE, FRAMES_PER_BUFFER)
-        
+            recorded_audio = record_audio(stream, RATE, FRAMES_PER_BUFFER)  
     
-    if input_type == 'Mic':
-        ## Live Audio
-        st.write('Input Mode: Mic')
-        #
-        # Open file for recording
-        print("Recording...")
+        # Create Stop Recording Button
+        if st.sidebar.button("Stop", key="stop_btn"):
+            st.session_state.stop_rec = True
         
         
-        print("Finished Recording")
-        
-        # Save Recorded Audio File
-        # with wave.open() as file:
-            
-        
-        # Calculate audio length
-        # duration = file.getnframes() / file.getframerate()
-        # print(f"Audio file duration: {duration}")    
     else:
         ## Upload Audio file w/ Streamlit
         audio_file = st.file_uploader(
@@ -85,6 +78,7 @@ def main():
             # Playback Audio File
             st.sidebar.header("Play Uploaded Audio File")
             st.sidebar.audio(audio_file)
+    
     
     # Load WhisperAI model
     ## Select model
@@ -99,10 +93,10 @@ def main():
             | small  |   244 M    |      `small`       |     ~2 GB     |      ~6x       |
             | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
             | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
-        """ 
+        """
     )
     whisper_file = os.path.join(models_path, f"{whisper_selected}.pt")
-    print(f"Whisper file:", whisper_file)
+   
     
     # Check if selected model exists
     if not whisper_selected:
@@ -112,7 +106,7 @@ def main():
         st.sidebar.success(f"Whisper Selected: {whisper_selected}", icon="✅")
         
         ## Check if select model exists in models directory
-        print(f"Selected model: {model_file}")
+        # print(f"Selected model: {model_file}")
         if not os.path.exists(whisper_file):
             st.warning(
                 f"Model {whisper_selected} not found in {models_path}.",
@@ -179,13 +173,30 @@ def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
 def record_audio(stream, rate, frames_per_buffer):
     seconds = 10
     frames = []
+    print("Recording...")
     
     # Record Audio input
     for i in tqdm(range(int(rate / frames_per_buffer * seconds))):
         data = stream.read(frames_per_buffer)
-        frames.append(data)   
-    return data 
+        frames.append(data)  
+        
+        # Check if the "Stop" button has been clicked
+        if st.session_state.stop_rec:
+            break
+        
+    # Reset stop_rec for future recordings
+    st.session_state.stop_rec = False
+        
+    # Check if recording is done
+    if not st.session_state.stop_rec:
+        print("Recording Finished!")
+    else:
+        print("Recording Stopped")
     
+    return data 
+
+def save_audio():
+    ...
 
 # Run
 if __name__ == "__main__":
