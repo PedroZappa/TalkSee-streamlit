@@ -9,7 +9,10 @@ import torch
 load_dotenv()
 
 # Setup Model Storage
-models_dir = os.getenv("MODELS_DIR")
+# models_path = os.getenv("MODELS_DIR")
+models_path = os.environ.get("MODELS_DIR")
+# models_path = "models/"
+os.chmod(models_path, 0o775)
 
 
 def main():
@@ -31,7 +34,9 @@ def main():
     if input_type == 'Mic':
         ## Record Live Audio
         st.write('Input Mode: Mic')
-        ...
+        #
+        # Implement MIC input
+        #
     else:
         ## Upload Audio file w/ Streamlit
         audio_file = st.file_uploader(
@@ -58,16 +63,19 @@ def main():
     ) 
     
     ## Check if select model exists in models directory
-    # model_file = os.path.join(models_dir, whisper_selected")
-    # if not os.path.exists(model_file):
-    #     st.warning(f"Model {whisper_selected} not found in {models_dir}. Downloading...")
+    model_file = os.path.join(models_path, f"{whisper_selected}.pt")
+    print(f"Selected model: {model_file}")
+    if not os.path.exists(model_file):
+        st.warning(f"Model {whisper_selected} not found in {models_path}.\nDownloading...")
+    
     
     ## Load user selected model
-    # model = whisper.load_model(
-    #     whisper_selected,
-    #     download_root=models_dir
-    # )
-    # st.text(f"Whisper {whisper_selected} model loaded")
+    model = whisper.load_model(
+        whisper_selected,
+        device=DEVICE,
+        download_root=models_path
+    )
+    st.sidebar.text(f"Whisper {whisper_selected} model loaded")
     
     
     # Transcribe audio file
@@ -79,4 +87,3 @@ def main():
 # Run
 if __name__ == "__main__":
     main()
-    
