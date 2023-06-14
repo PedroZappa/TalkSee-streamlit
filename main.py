@@ -84,7 +84,7 @@ def main():
     if not whisper_selected:
         st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
     else:
-        st.sidebar.success(f"Whisper Selected: {whisper_selected}", icon="✅")
+        st.sidebar.success(f"Whisper Model: {whisper_selected}", icon="✅")
         
         ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
@@ -117,54 +117,17 @@ def main():
             
     ## MIC or FILE
     if input_type == 'Mic':
-        st.sidebar.header("Record Audio")
-        
-        # if button clicked
-        if st.sidebar.button("Record", key='record_btn'):
-            # Start Audio Recording 
-            recorded_audio = record_audio(stream, RATE, FRAMES_PER_BUFFER) 
-            # Save Recording to a file
-            save_audio(p, CHANNELS, FORMAT, RATE, recorded_audio) 
-    
-        # Create Stop Recording Button
-        # if st.sidebar.button(
-        #     "Stop", 
-        #     key="stop_btn",
-        #     on_click=stop_rec
-        #     or st.session_state.stop_rec):
-        #     st.session_state.stop_rec = True
-        
-            # Render Playback Audio File
-            audio_file = load_audio_file("output.wav")
-            
-            if audio_file.size > 0:
-                # Playback Audio File
-                st.sidebar.header("Play Recorded Audio File")
-                st.sidebar.audio(
-                    audio_file,
-                    format="audio/wav",
-                    sample_rate=RATE,
-                )     
+        #  Setup User Mic Input
+        audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER) 
                 
     else:
-        ## Upload Pre-Recorded Audio file
-        audio_file = st.file_uploader(
-            "Upload Audio File", 
-            key="upload_file",
-            # Supported file types
-            type=["wav", "mp3", "m4a"]
-        )
-        if audio_file:
-            # Render Playback Audio File
-            st.sidebar.header("Play Uploaded Audio File")
-            st.sidebar.audio(audio_file)
-            
-            print(audio_file)
+        #  Setup User File Input
+        audio_file = setup_file()
+        
     
     
     # Transcribe audio file
     transcription = transcribe(audio_file, model)
-    print("Transcription:", transcription['text'])
     
     #
     # Generate Image ( Extra GOAL )
@@ -184,9 +147,64 @@ def load_whisper(whisper_selected, device, models_path):
            
         # show loaded model if selected
         if model:
-            st.sidebar.text(f"Whisper {whisper_selected} model loaded")
+            st.sidebar.text(f"Whisper Model: {whisper_selected} downloaded")
         
         return model
+
+
+def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
+    global audio_file
+    
+    st.sidebar.header("Record Audio")
+        
+    # if button clicked
+    if st.sidebar.button("Record", key='record_btn'):
+        # Start Audio Recording 
+        recorded_audio = record_audio(stream, rate, frames_per_buffer) 
+        # Save Recording to a file
+        save_audio(p, channels, format, rate, recorded_audio) 
+
+    # Create Stop Recording Button
+    # if st.sidebar.button(
+    #     "Stop", 
+    #     key="stop_btn",
+    #     on_click=stop_rec
+    #     or st.session_state.stop_rec):
+    #     st.session_state.stop_rec = True
+    
+        # Render Playback Audio File
+        audio_file = load_audio_file("output.wav")
+        
+        if audio_file.size > 0:
+            # Playback Audio File
+            st.sidebar.header("Play Recorded Audio File")
+            st.sidebar.audio(
+                audio_file,
+                format="audio/wav",
+                sample_rate=RATE,
+            )   
+            
+    return audio_file 
+    
+
+def setup_file():
+    global audio_file
+    
+    ## Upload Pre-Recorded Audio file
+    audio_file = st.file_uploader(
+        "Upload Audio File", 
+        key="upload_file",
+        # Supported file types
+        type=["wav", "mp3", "m4a"]
+    )
+    if audio_file:
+        # Render Playback Audio File
+        st.sidebar.header("Play Uploaded Audio File")
+        st.sidebar.audio(audio_file)
+        
+        print(audio_file)
+        
+    return audio_file
 
 
 def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
@@ -262,6 +280,7 @@ def load_audio_file(input) :
         
     return audio_array
 
+
 def transcribe(audio_file, model):
     transcription = {}
     if st.sidebar.button("Transcribe!"):
@@ -276,6 +295,8 @@ def transcribe(audio_file, model):
             st.markdown(transcription["text"])
         else:
             st.sidebar.error("Please input a valid audio file!")
+    
+    # print("Transcription:", transcription['text'])
             
     return transcription
     
