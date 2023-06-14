@@ -31,6 +31,12 @@ RATE = 16000
 # Initialize Session State
 if 'stop_rec' not in st.session_state:
     st.session_state.stop_rec = False
+    
+if 'audio_file' not in st.session_state:
+    st.session_state.audio_file = None
+    
+if 'whisper_loaded' not in st.session_state:
+    st.session_state.whisper_loaded = False
 
 # Change Session State
 def stop_rec():
@@ -40,6 +46,7 @@ def stop_rec():
 # DEBUG Session State
 print("Session State: ", st.session_state)
 print("stop_rec: ", st.session_state.stop_rec)
+print("audio_file: ", st.session_state.audio_file)
 
 
 def main():
@@ -50,7 +57,7 @@ def main():
     # Check if CUDA is available
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    st.sidebar.text(f"Torch Status: {DEVICE}")
+    
     
     # Setup Audio Stream
     p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
@@ -58,7 +65,6 @@ def main():
     # Streamlit UI: Title
     st.sidebar.title("🗣 ⇢ 👀")
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
-    
     
     
     # Load WhisperAI model
@@ -83,8 +89,9 @@ def main():
     # Check if selected model exists
     if not whisper_selected:
         st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
+    
     else:
-        st.sidebar.success(f"Whisper Model: {whisper_selected}", icon="✅")
+        whisper_select = st.sidebar.info(f"Selected Whisper Model: {whisper_selected}", icon="👆")
         
         ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
@@ -92,17 +99,21 @@ def main():
                 f"Model {whisper_selected} not found in {models_path}.",
                 icon="🚨"
             )
+            download_info = st.info("Downloading...")
             # progress_text = f"Downloading Whisper {whisper_selected} model..."
             # whisper_progress = st.progress(0, text=progress_text)
             
             # Load Model
-            model = load_whisper(whisper_selected, DEVICE, models_path)
+            model = load_whisper(whisper_selected, DEVICE, models_path, whisper_select)
             
+            download_info.empty()
             # Progress Update
             # for percent in tqdm():
             #     time.sleep(0.1)
+        # time.sleep(3) # Wait for 3 seconds
+        # alert.empty() # Clear the alert
     
-    model = load_whisper(whisper_selected, DEVICE, models_path)
+    model = load_whisper(whisper_selected, DEVICE, models_path, whisper_select)
     
     
     # Get user input
@@ -113,30 +124,51 @@ def main():
         ('Mic', 'File'),
         label_visibility='collapsed',
         horizontal=True
-    )
-            
+    )          
     ## MIC or FILE
     if input_type == 'Mic':
         #  Setup User Mic Input
-        audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER) 
-                
+        audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)     
     else:
         #  Setup User File Input
         audio_file = setup_file()
         
     
-    
     # Transcribe audio file
     transcription = transcribe(audio_file, model)
     
+    
+    # 
     #
     # Generate Image ( Extra GOAL )
     #
     #
-    ...
+    
+    # Session State DEBUGGER
+    "st.sesion_sstate obj:", st.session_state
+    
+    # Render Torch Status
+    st.sidebar.text(f"Torch Status: {DEVICE}")
 
 
-def load_whisper(whisper_selected, device, models_path):
+# Setup Audio Stream 
+def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
+    ## Create PyAudio
+    p = pyaudio.PyAudio()
+    ## Init Stream
+    stream = p.open(
+        format=format, 
+        channels=channels, 
+        rate=rate, 
+        input=True, 
+        frames_per_buffer=frames_per_buffer
+    )
+    return p, stream
+
+
+# Load Whisper Models
+# @st.cache_resource() 
+def load_whisper(whisper_selected, device, models_path, whisper_select):
     ## Load user selected model
     if whisper_selected:
         model = whisper.load_model(
@@ -147,11 +179,20 @@ def load_whisper(whisper_selected, device, models_path):
            
         # show loaded model if selected
         if model:
-            st.sidebar.text(f"Whisper Model: {whisper_selected} downloaded")
+            alert = st.text(f"Whisper Model: {whisper_selected} loaded")
+            #  Update Session State
+            st.session_state.whisper_loaded
+            
+            # Clear selection alert
+            whisper_select.empty() 
+            success = st.sidebar.success(f"Loaded Whisper Model: {whisper_selected}", icon="✅")
+            
+            
         
         return model
 
 
+# Handle User Input 
 def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     global audio_file
     
@@ -160,20 +201,9 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     # if button clicked
     if st.sidebar.button("Record", key='record_btn'):
         # Start Audio Recording 
-        recorded_audio = record_audio(stream, rate, frames_per_buffer) 
+        rec_frames = record_audio(stream, rate, frames_per_buffer) 
         # Save Recording to a file
-        save_audio(p, channels, format, rate, recorded_audio) 
-
-    # Create Stop Recording Button
-    # if st.sidebar.button(
-    #     "Stop", 
-    #     key="stop_btn",
-    #     on_click=stop_rec
-    #     or st.session_state.stop_rec):
-    #     st.session_state.stop_rec = True
-    
-        # Render Playback Audio File
-        audio_file = load_audio_file("output.wav")
+        audio_file = save_audio(p, channels, format, rate, rec_frames) 
         
         if audio_file.size > 0:
             # Playback Audio File
@@ -182,7 +212,9 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
                 audio_file,
                 format="audio/wav",
                 sample_rate=RATE,
-            )   
+            )  
+            
+    print(audio_file)
             
     return audio_file 
     
@@ -202,23 +234,9 @@ def setup_file():
         st.sidebar.header("Play Uploaded Audio File")
         st.sidebar.audio(audio_file)
         
-        print(audio_file)
+    print(audio_file)
         
     return audio_file
-
-
-def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
-    ## Create PyAudio
-    p = pyaudio.PyAudio()
-    ## Init Stream
-    stream = p.open(
-        format=format, 
-        channels=channels, 
-        rate=rate, 
-        input=True, 
-        frames_per_buffer=frames_per_buffer
-    )
-    return p, stream
 
 
 def record_audio(stream, rate, frames_per_buffer):
@@ -227,6 +245,7 @@ def record_audio(stream, rate, frames_per_buffer):
     # Audio frames buffer
     frames = []
     print("Recording...")
+    st.write("Recording...")
     
     # Record Audio input
     for i in range(int(rate / frames_per_buffer * seconds)):
@@ -259,9 +278,20 @@ def save_audio(p, channels, format, rate, frames):
         file.setsampwidth(p.get_sample_size(format))
         file.setframerate(rate)
         # combine all elements in frames list into a binary string
-        file.writeframes(b"".join(frames))
+        frames_bytes = b"".join(frames)
+        file.writeframes(frames_bytes)
+        
+    # Convert frames to NumPy array
+    audio_arr = np.frombuffer(frames_bytes, dtype=np.int16)
+        
+    print(f"Inside save_audio: {file}" )
     
-    return file
+    # Store audio_arr in session_state
+    st.session_state.audio_file = audio_arr
+    print("audio_file: ", st.session_state.audio_file)
+    
+    
+    return audio_arr
     
 
 def load_audio_file(input) :
@@ -281,6 +311,7 @@ def load_audio_file(input) :
     return audio_array
 
 
+# Transcribe Audio
 def transcribe(audio_file, model):
     transcription = {}
     if st.sidebar.button("Transcribe!"):
@@ -292,6 +323,8 @@ def transcribe(audio_file, model):
                 "Transcription Complete!",
                 icon="🤩"
             )
+            # Render UI
+            st.header("✍️ Transcription 📃")
             st.markdown(transcription["text"])
         else:
             st.sidebar.error("Please input a valid audio file!")
