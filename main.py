@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import streamlit as st
+from audio_recorder_streamlit import audio_recorder
 import whisper 
 import time
 import os
@@ -8,6 +9,9 @@ import pyaudio
 import wave
 from tqdm.auto import tqdm
 import numpy as np
+from io import BytesIO
+import streamlit.components.v1 as components
+from st_custom_components import st_audiorec
 
 
 # Load env variables from .env file
@@ -102,13 +106,17 @@ def main():
     )          
     ## MIC or FILE
     if input_type == 'Mic':
+        #  Render UI
+        st.sidebar.header("Record Audio")
         #  Setup User Mic Input
         audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)     
     else:
         #  Setup User File Input
         audio_file = setup_file()
-        
-    
+
+    # Render UI       
+    st.sidebar.header("Record Audio")
+
     # Transcribe audio file
     transcription = transcribe(audio_file, model)
     
@@ -151,8 +159,7 @@ def model_exists(whisper_selected, device, models_path):
         ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
 
-            download_info = st.info("Downloading...")
-            # progress_text = f"Downloading Whisper {whisper_selected} model..."
+            download_info = st.info(f"Downloading Whisper {whisper_selected} model...")
             # whisper_progress = st.progress(0, text=progress_text)
             
             # Load Model
@@ -199,12 +206,16 @@ def load_whisper(whisper_selected, device, models_path, whisper_select):
 ## if MIC
 def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     global audio_file
+    # sEtup streamlit_audio_recorder stream
+    # wav_audio_data = st_audiorec()
     
-    st.sidebar.header("Record Audio")
+    # # Start Audio Recording 
+    # if wav_audio_data is not None:
+    #     # display audio data as received on the backend
+    #     audio_file = st.audio(wav_audio_data, format='audio/wav')
         
     # if button clicked
-    if st.sidebar.button("Record", key='record_btn'):
-        # Start Audio Recording 
+    if st.sidebar.button("Record", key='record_btn'):        
         rec_frames = record_audio(stream, rate, frames_per_buffer) 
         # Save Recording to a file
         audio_file = save_audio(p, channels, format, rate, rec_frames) 
