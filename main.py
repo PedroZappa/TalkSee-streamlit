@@ -87,34 +87,7 @@ def main():
     print(whisper_file)
     
     # Check if selected model exists
-    if not whisper_selected:
-        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
-    
-    else:
-        whisper_select = st.sidebar.info(f"Selected Whisper Model: {whisper_selected}", icon="👆")
-        
-        ## Check if select model exists in models directory
-        if not os.path.exists(whisper_file):
-            st.warning(
-                f"Model {whisper_selected} not found in {models_path}.",
-                icon="🚨"
-            )
-            download_info = st.info("Downloading...")
-            # progress_text = f"Downloading Whisper {whisper_selected} model..."
-            # whisper_progress = st.progress(0, text=progress_text)
-            
-            # Load Model
-            model = load_whisper(whisper_selected, DEVICE, models_path, whisper_select)
-            
-            download_info.empty()
-            # Progress Update
-            # for percent in tqdm():
-            #     time.sleep(0.1)
-        # time.sleep(3) # Wait for 3 seconds
-        # alert.empty() # Clear the alert
-    
-    model = load_whisper(whisper_selected, DEVICE, models_path, whisper_select)
-    
+    model = model_exists(whisper_selected, DEVICE, models_path)
     
     # Get user input
     ## Select Input Mode
@@ -145,7 +118,7 @@ def main():
     #
     
     # Session State DEBUGGER
-    "st.sesion_sstate obj:", st.session_state
+    "st.sesion_state obj:", st.session_state
     
     # Render Torch Status
     st.sidebar.text(f"Torch Status: {DEVICE}")
@@ -164,6 +137,38 @@ def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
         frames_per_buffer=frames_per_buffer
     )
     return p, stream
+
+
+def model_exists(whisper_selected, device, models_path):
+    if not whisper_selected:
+        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
+    
+    else:
+        whisper_select = st.sidebar.info(f"Selected Whisper Model: {whisper_selected}", icon="👆")
+        
+        ## Check if select model exists in models directory
+        if not os.path.exists(whisper_file):
+            st.warning(
+                f"Model {whisper_selected} not found in {models_path}.",
+                icon="🚨"
+            )
+            download_info = st.info("Downloading...")
+            # progress_text = f"Downloading Whisper {whisper_selected} model..."
+            # whisper_progress = st.progress(0, text=progress_text)
+            
+            # Load Model
+            model = load_whisper(whisper_selected, device, models_path, whisper_select)
+            
+            download_info.empty()
+            # Progress Update
+            # for percent in tqdm():
+            #     time.sleep(0.1)
+        # time.sleep(3) # Wait for 3 seconds
+        # alert.empty() # Clear the alert
+    
+    model = load_whisper(whisper_selected, device, models_path, whisper_select)
+    
+    return model
 
 
 # Load Whisper Models
