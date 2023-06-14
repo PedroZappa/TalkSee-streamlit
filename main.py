@@ -14,12 +14,10 @@ import numpy as np
 load_dotenv()
 
 # Setup Model Storage
-# models_path = os.getenv("MODELS_DIR")
 models_path = os.environ.get("MODELS_PATH")
-# give write permission on models_path
+
+# enable write permission on models_path
 os.chmod(models_path, 0o775)
-model_file = ''
-whisper_file = ''
 
 # AUDIO CONSTANTS
 FRAMES_PER_BUFFER = 3200
@@ -27,6 +25,10 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 16000
 
+# Init vars
+model_file = ''
+whisper_file = ''
+audio_file = None
 
 # Initialize Session State
 if 'stop_rec' not in st.session_state:
@@ -52,23 +54,21 @@ print("audio_file: ", st.session_state.audio_file)
 def main():
     global audio_file
     
-    audio_file = None
     
     # Check if CUDA is available
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     
-    
     # Setup Audio Stream
     p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Streamlit UI: Title
-    st.sidebar.title("🗣 ⇢ 👀")
+    st.sidebar.title("🗣 ⇢  👀: a speech-to-text web app")
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
+    # st.info("a speech-to-text web app")
+
     
-    
-    # Load WhisperAI model
-    ## Select model
+    # Select WhisperAI model
     model = None
     whisper_selected = st.sidebar.selectbox(
         'Available Multilingual Models',
@@ -83,11 +83,13 @@ def main():
             | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
         """
     )
+    ## Get models path
     whisper_file = os.path.join(models_path, f"{whisper_selected}.pt")
     print(whisper_file)
     
-    # Check if selected model exists
+    ## Check if selected model exists
     model = model_exists(whisper_selected, DEVICE, models_path)
+    
     
     # Get user input
     ## Select Input Mode
@@ -110,18 +112,18 @@ def main():
     # Transcribe audio file
     transcription = transcribe(audio_file, model)
     
-    
-    # 
-    #
+
     # Generate Image ( Extra GOAL )
-    #
-    #
+
     
     # Session State DEBUGGER
     "st.sesion_state obj:", st.session_state
     
     # Render Torch Status
     st.sidebar.text(f"Torch Status: {DEVICE}")
+    
+    # main() end #
+    ##############
 
 
 # Setup Audio Stream 
@@ -148,10 +150,7 @@ def model_exists(whisper_selected, device, models_path):
         
         ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
-            st.warning(
-                f"Model {whisper_selected} not found in {models_path}.",
-                icon="🚨"
-            )
+
             download_info = st.info("Downloading...")
             # progress_text = f"Downloading Whisper {whisper_selected} model..."
             # whisper_progress = st.progress(0, text=progress_text)
@@ -159,14 +158,16 @@ def model_exists(whisper_selected, device, models_path):
             # Load Model
             model = load_whisper(whisper_selected, device, models_path, whisper_select)
             
+            # Render UI
             download_info.empty()
+                
             # Progress Update
             # for percent in tqdm():
             #     time.sleep(0.1)
         # time.sleep(3) # Wait for 3 seconds
         # alert.empty() # Clear the alert
     
-    model = load_whisper(whisper_selected, device, models_path, whisper_select)
+    # model = load_whisper(whisper_selected, device, models_path, whisper_select)
     
     return model
 
@@ -184,20 +185,18 @@ def load_whisper(whisper_selected, device, models_path, whisper_select):
            
         # show loaded model if selected
         if model:
-            alert = st.text(f"Whisper Model: {whisper_selected} loaded")
-            #  Update Session State
-            st.session_state.whisper_loaded
+            # Update Session State
+            st.session_state.whisper_loaded = True
             
-            # Clear selection alert
+            # Render UI
+            alert = st.text(f"✅ Loaded Model: {whisper_selected}")
             whisper_select.empty() 
-            success = st.sidebar.success(f"Loaded Whisper Model: {whisper_selected}", icon="✅")
-            
-            
         
         return model
 
 
 # Handle User Input 
+## if MIC
 def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     global audio_file
     
@@ -223,7 +222,7 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
             
     return audio_file 
     
-
+## if FILE
 def setup_file():
     global audio_file
     
@@ -250,7 +249,8 @@ def record_audio(stream, rate, frames_per_buffer):
     # Audio frames buffer
     frames = []
     print("Recording...")
-    st.write("Recording...")
+    # Render UI
+    feedback = st.info("Recording...")
     
     # Record Audio input
     for i in range(int(rate / frames_per_buffer * seconds)):
@@ -272,6 +272,8 @@ def record_audio(stream, rate, frames_per_buffer):
         print("Recording Finished!")
     else:
         print("Recording Stopped")
+        
+    feedback.empty()
     
     return frames 
 
@@ -321,7 +323,8 @@ def transcribe(audio_file, model):
     transcription = {}
     if st.sidebar.button("Transcribe!"):
         if audio_file is not None:
-            st.sidebar.write("Transcribing...")
+            #  Render UI
+            feedback = st.sidebar.info("Transcribing...")
             # audio_file.name == filePath
             transcription = model.transcribe(audio_file.name)
             st.sidebar.success(
@@ -331,6 +334,7 @@ def transcribe(audio_file, model):
             # Render UI
             st.header("✍️ Transcription 📃")
             st.markdown(transcription["text"])
+            feedback.empty()
         else:
             st.sidebar.error("Please input a valid audio file!")
     
