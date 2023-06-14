@@ -56,8 +56,9 @@ def main():
     p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Streamlit UI: Title
-    st.title("🗣 ⇢ TalkSee ⇢ 👀")
     st.sidebar.title("🗣 ⇢ 👀")
+    st.title("🗣 ⇢ TalkSee ⇢ 👀")
+    
     
     
     # Load WhisperAI model
@@ -161,23 +162,14 @@ def main():
             print(audio_file)
     
     
-    
-    
     # Transcribe audio file
-    if st.sidebar.button("Transcribe!"):
-        if audio_file is not None:
-            st.sidebar.write("Transcribing...")
-            # audio_file.name == filePath
-            transcription = model.transcribe(audio_file.name)
-            st.sidebar.success(
-                "Transcription Complete!",
-                icon="🤩"
-            )
-            st.markdown(transcription["text"])
-        else:
-            st.sidebar.error("Please input a valid audio file!")
+    transcription = transcribe(audio_file, model)
+    print("Transcription:", transcription['text'])
     
+    #
     # Generate Image ( Extra GOAL )
+    #
+    #
     ...
 
 
@@ -269,6 +261,23 @@ def load_audio_file(input) :
         audio_array = np.frombuffer(frames, dtype=np.int16)
         
     return audio_array
+
+def transcribe(audio_file, model):
+    transcription = {}
+    if st.sidebar.button("Transcribe!"):
+        if audio_file is not None:
+            st.sidebar.write("Transcribing...")
+            # audio_file.name == filePath
+            transcription = model.transcribe(audio_file.name)
+            st.sidebar.success(
+                "Transcription Complete!",
+                icon="🤩"
+            )
+            st.markdown(transcription["text"])
+        else:
+            st.sidebar.error("Please input a valid audio file!")
+            
+    return transcription
     
 
 # Run
