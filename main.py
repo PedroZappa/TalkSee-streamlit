@@ -10,6 +10,7 @@ import wave
 from tqdm.auto import tqdm
 import numpy as np
 from io import BytesIO
+from scipy.io.wavfile import write
 import streamlit.components.v1 as components
 from st_custom_components import st_audiorec
 
@@ -51,8 +52,6 @@ def stop_rec():
 
 # DEBUG Session State
 print("Session State: ", st.session_state)
-print("stop_rec: ", st.session_state.stop_rec)
-print("audio_file: ", st.session_state.audio_file)
 
 
 def main():
@@ -67,10 +66,9 @@ def main():
     p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Streamlit UI: Title
-    st.sidebar.title("🗣 ⇢  👀: a speech-to-text web app")
+    st.sidebar.title("🗣 ⇢  👀 : a speech-2-text web app")
+    st.sidebar.text(f"Torch Status: {DEVICE}")
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
-    # st.info("a speech-to-text web app")
-
     
     # Select WhisperAI model
     model = None
@@ -107,7 +105,7 @@ def main():
     ## MIC or FILE
     if input_type == 'Mic':
         #  Render UI
-        st.sidebar.header("Record Audio")
+        st.sidebar.header("🎙️ Record Audio")
         #  Setup User Mic Input
         audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)     
     else:
@@ -115,7 +113,7 @@ def main():
         audio_file = setup_file()
 
     # Render UI       
-    st.sidebar.header("Record Audio")
+    st.sidebar.header("✍️ Transcribe Audio")
 
     # Transcribe audio file
     transcription = transcribe(audio_file, model)
@@ -125,10 +123,7 @@ def main():
 
     
     # Session State DEBUGGER
-    "st.sesion_state obj:", st.session_state
-    
-    # Render Torch Status
-    st.sidebar.text(f"Torch Status: {DEVICE}")
+    st.session_state
     
     # main() end #
     ##############
@@ -206,27 +201,21 @@ def load_whisper(whisper_selected, device, models_path, whisper_select):
 ## if MIC
 def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     global audio_file
-    # sEtup streamlit_audio_recorder stream
-    # wav_audio_data = st_audiorec()
-    
-    # # Start Audio Recording 
-    # if wav_audio_data is not None:
-    #     # display audio data as received on the backend
-    #     audio_file = st.audio(wav_audio_data, format='audio/wav')
         
     # if button clicked
     if st.sidebar.button("Record", key='record_btn'):        
         rec_frames = record_audio(stream, rate, frames_per_buffer) 
         # Save Recording to a file
         audio_file = save_audio(p, channels, format, rate, rec_frames) 
-        
-        if audio_file.size > 0:
+
+        if audio_file:
+            audio_data = load_audio_file(audio_file)
             # Playback Audio File
             st.sidebar.header("Play Recorded Audio File")
             st.sidebar.audio(
-                audio_file,
+                audio_data,
                 format="audio/wav",
-                sample_rate=RATE,
+                sample_rate=rate,
             )  
             
     print(audio_file)
@@ -261,7 +250,7 @@ def record_audio(stream, rate, frames_per_buffer):
     frames = []
     print("Recording...")
     # Render UI
-    feedback = st.info("Recording...")
+    feedback = st.info("🔴  Recording...")
     
     # Record Audio input
     for i in range(int(rate / frames_per_buffer * seconds)):
@@ -308,8 +297,13 @@ def save_audio(p, channels, format, rate, frames):
     st.session_state.audio_file = audio_arr
     print("audio_file: ", st.session_state.audio_file)
     
+    # convert audio array to wav file
+    buffer = BytesIO()
+    write(buffer, rate, audio_arr)
+    buffer.seek(0)  # Reset the buffer position to the beginning
     
-    return audio_arr
+    print("Buffer:", buffer)
+    return buffer
     
 
 def load_audio_file(input) :
@@ -332,6 +326,7 @@ def load_audio_file(input) :
 # Transcribe Audio
 def transcribe(audio_file, model):
     transcription = {}
+    
     if st.sidebar.button("Transcribe!"):
         if audio_file is not None:
             #  Render UI
