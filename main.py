@@ -11,8 +11,6 @@ from tqdm.auto import tqdm
 import numpy as np
 from io import BytesIO
 from scipy.io.wavfile import write
-import streamlit.components.v1 as components
-from st_custom_components import st_audiorec
 
 
 # Load env variables from .env file
@@ -56,7 +54,6 @@ print("Session State: ", st.session_state)
 
 def main():
     global audio_file
-    
     
     # Check if CUDA is available
     torch.cuda.is_available()
@@ -107,10 +104,16 @@ def main():
         #  Render UI
         st.sidebar.header("🎙️ Record Audio")
         #  Setup User Mic Input
-        audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)     
+        audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)   
+         
+        # DEBUG
+        print('Audio Rec from 🎤:', audio_file) 
     else:
         #  Setup User File Input
         audio_file = setup_file()
+        
+        # DEBUG
+        print('Audio Rec from 📂:', audio_file)
 
     # Render UI       
     st.sidebar.header("✍️ Transcribe Audio")
@@ -201,26 +204,27 @@ def load_whisper(whisper_selected, device, models_path, whisper_select):
 ## if MIC
 def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     global audio_file
+    audio_data = None
         
     # if button clicked
-    if st.sidebar.button("Record", key='record_btn'):        
-        rec_frames = record_audio(stream, rate, frames_per_buffer) 
-        # Save Recording to a file
-        audio_file = save_audio(p, channels, format, rate, rec_frames) 
+    if st.sidebar.button("Record", key='record_btn'):  
+        # Start Recording 
+        audio_file = record_audio(p, stream, rate, channels, format, frames_per_buffer) 
+        
+        print("audio_file inside setup_mic():", audio_file)
 
+        # Load Recorded file to memory
         if audio_file:
             audio_data = load_audio_file(audio_file)
             # Playback Audio File
-            st.sidebar.header("Play Recorded Audio File")
+            st.sidebar.header("🎧 Play Recorded Audio File")
             st.sidebar.audio(
                 audio_data,
                 format="audio/wav",
                 sample_rate=rate,
             )  
             
-    print(audio_file)
-            
-    return audio_file 
+    return audio_data 
     
 ## if FILE
 def setup_file():
@@ -235,7 +239,7 @@ def setup_file():
     )
     if audio_file:
         # Render Playback Audio File
-        st.sidebar.header("Play Uploaded Audio File")
+        st.sidebar.header("🎧 Play Uploaded Audio File")
         st.sidebar.audio(audio_file)
         
     print(audio_file)
@@ -243,14 +247,14 @@ def setup_file():
     return audio_file
 
 
-def record_audio(stream, rate, frames_per_buffer):
+def record_audio(p, stream, rate, channels, format, frames_per_buffer):
     # Time to record
     seconds = 6
     # Audio frames buffer
     frames = []
     print("Recording...")
     # Render UI
-    feedback = st.info("🔴  Recording...")
+    rec_feedback = st.info("🔴 Recording...")
     
     # Record Audio input
     for i in range(int(rate / frames_per_buffer * seconds)):
@@ -273,12 +277,9 @@ def record_audio(stream, rate, frames_per_buffer):
     else:
         print("Recording Stopped")
         
-    feedback.empty()
-    
-    return frames 
+    # Render UI
+    rec_feedback.empty()
 
-
-def save_audio(p, channels, format, rate, frames):
     # Save Recorded Audio to file
     with wave.open("output.wav", "wb") as file:
         file.setnchannels(channels)
@@ -287,24 +288,13 @@ def save_audio(p, channels, format, rate, frames):
         # combine all elements in frames list into a binary string
         frames_bytes = b"".join(frames)
         file.writeframes(frames_bytes)
-        
-    # Convert frames to NumPy array
-    audio_arr = np.frombuffer(frames_bytes, dtype=np.int16)
-        
-    print(f"Inside save_audio: {file}" )
     
-    # Store audio_arr in session_state
-    st.session_state.audio_file = audio_arr
-    print("audio_file: ", st.session_state.audio_file)
+    # Store file in session_state
+    st.session_state.audio_file = file
+    print("Session State audio_file: ", st.session_state.audio_file)
     
-    # convert audio array to wav file
-    buffer = BytesIO()
-    write(buffer, rate, audio_arr)
-    buffer.seek(0)  # Reset the buffer position to the beginning
-    
-    print("Buffer:", buffer)
-    return buffer
-    
+    return file
+
 
 def load_audio_file(input) :
     # Open audio file
