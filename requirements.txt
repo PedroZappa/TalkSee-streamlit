@@ -1,0 +1,6 @@
+streamlit
+whisper
+torch
+pyaudio
+numpy
+tqdm
