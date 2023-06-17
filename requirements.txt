@@ -4,3 +4,4 @@ torch
 pyaudio
 numpy
 tqdm
+python-dotenv
