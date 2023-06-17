@@ -9,8 +9,11 @@ import pyaudio
 import wave
 from tqdm.auto import tqdm
 import numpy as np
+import io
 from io import BytesIO
 from scipy.io.wavfile import write
+import json
+import struct
 
 
 # Load env variables from .env file
@@ -33,6 +36,7 @@ model_file = ''
 whisper_file = ''
 audio_file = None
 
+
 # Initialize Session State
 if 'stop_rec' not in st.session_state:
     st.session_state.stop_rec = False
@@ -49,7 +53,9 @@ def stop_rec():
     st.session_state.stop_rec = True
 
 # DEBUG Session State
-print("Session State: ", st.session_state)
+print("⚠️  Session State:", st.session_state)
+
+# json.dumps(json.loads(st.session_state), indent=4)
 
 
 def main():
@@ -92,7 +98,7 @@ def main():
     
     # Get user input
     ## Select Input Mode
-    st.sidebar.header("Select Input Mode")
+    st.sidebar.header("Select I/O Mode")
     input_type = st.sidebar.radio(
         'Select Input Mode',
         ('Mic', 'File'),
@@ -107,13 +113,14 @@ def main():
         audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)   
          
         # DEBUG
-        print('Audio Rec from 🎤:', audio_file) 
+        # print("🎤 setup_mic:", {audio_file})
+        
     else:
         #  Setup User File Input
         audio_file = setup_file()
         
         # DEBUG
-        print('Audio Rec from 📂:', audio_file)
+        print("📂 setup_file:", audio_file)
 
     # Render UI       
     st.sidebar.header("✍️ Transcribe Audio")
@@ -209,19 +216,19 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     # if button clicked
     if st.sidebar.button("Record", key='record_btn'):  
         # Start Recording 
-        audio_file = record_audio(p, stream, rate, channels, format, frames_per_buffer) 
+        audio_file_path = record_audio(p, stream, rate, channels, format, frames_per_buffer) 
         
-        print("audio_file inside setup_mic():", audio_file)
+        print("audio_file_path inside setup_mic():", audio_file_path)
 
         # Load Recorded file to memory
-        if audio_file:
-            audio_data = load_audio_file(audio_file)
+        if audio_file_path:
+            audio_data = load_audio_file(audio_file_path)
+            # audio_data = read_wav_file(audio_file_path)
             # Playback Audio File
             st.sidebar.header("🎧 Play Recorded Audio File")
             st.sidebar.audio(
-                audio_data,
-                format="audio/wav",
-                sample_rate=rate,
+                audio_data
+                # format='audio/wav'
             )  
             
     return audio_data 
@@ -233,7 +240,7 @@ def setup_file():
     ## Upload Pre-Recorded Audio file
     audio_file = st.file_uploader(
         "Upload Audio File", 
-        key="upload_file",
+        key="audio_file",
         # Supported file types
         type=["wav", "mp3", "m4a"]
     )
@@ -241,9 +248,7 @@ def setup_file():
         # Render Playback Audio File
         st.sidebar.header("🎧 Play Uploaded Audio File")
         st.sidebar.audio(audio_file)
-        
-    print(audio_file)
-        
+                
     return audio_file
 
 
@@ -254,7 +259,10 @@ def record_audio(p, stream, rate, channels, format, frames_per_buffer):
     frames = []
     print("Recording...")
     # Render UI
-    rec_feedback = st.info("🔴 Recording...")
+    rec_feedback = st.sidebar.info(
+        "Recording...", 
+        icon="🔴"
+    )
     
     # Record Audio input
     for i in range(int(rate / frames_per_buffer * seconds)):
@@ -281,7 +289,8 @@ def record_audio(p, stream, rate, channels, format, frames_per_buffer):
     rec_feedback.empty()
 
     # Save Recorded Audio to file
-    with wave.open("output.wav", "wb") as file:
+    output_file_path = "output.wav"
+    with wave.open(output_file_path, "wb") as file:
         file.setnchannels(channels)
         file.setsampwidth(p.get_sample_size(format))
         file.setframerate(rate)
@@ -290,15 +299,15 @@ def record_audio(p, stream, rate, channels, format, frames_per_buffer):
         file.writeframes(frames_bytes)
     
     # Store file in session_state
-    st.session_state.audio_file = file
-    print("Session State audio_file: ", st.session_state.audio_file)
+    st.session_state.audio_file = output_file_path
+    # print("Session State audio_file: ", st.session_state.audio_file)
     
-    return file
+    return output_file_path
 
 
-def load_audio_file(input) :
+def load_audio_file(audio_file_path) :
     # Open audio file
-    with wave.open('output.wav', 'rb') as file:
+    with wave.open(audio_file_path, 'rb') as file:
         # Audio Length
         audio_data = file.getnframes() / file.getframerate()
         print(f"Loaded audio file length: {audio_data}")
@@ -307,11 +316,48 @@ def load_audio_file(input) :
         frames = file.readframes(-1)
         print("Types of frames object:", type(frames), type(frames[0]))
         
-        # Convert frames to NumPy array
-        audio_array = np.frombuffer(frames, dtype=np.int16)
+    # Convert frames to a byte string
+    audio_byte_string = BytesIO(frames)
         
-    return audio_array
+    return frames
 
+
+def read_wav_file(filepath: str) -> dict:
+    """Reads a WAV file and returns a dictionary with file metadata.
+
+    Args:
+        filepath (str): The path to the WAV file.
+
+    Returns:
+        dict: A dictionary with the file ID, name, type, and size.
+    """
+
+    # Open the file in binary mode
+    with io.open(filepath, 'rb') as file:
+        # Read the RIFF header
+        riff, size, fmt = struct.unpack('<4sI4s', file.read(12))
+
+        # Read the format chunk
+        chunk_id, chunk_size, audio_format, num_channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack('<4sIHHIIHH', file.read(24))
+
+        # Read the data chunk
+        data_id, data_size = struct.unpack('<4sI', file.read(8))
+        data = file.read(data_size)
+
+        # Get file metadata
+        file_id = 6  # Replace this with the actual file ID you want to use
+        file_name = os.path.basename(filepath)
+        file_type = 'audio/wav'
+        file_size = os.path.getsize(filepath)
+
+        # Return metadata as a dictionary
+        return {
+            'id': file_id,
+            'name': file_name,
+            'type': file_type,
+            'size': file_size
+        }
+        
 
 # Transcribe Audio
 def transcribe(audio_file, model):
