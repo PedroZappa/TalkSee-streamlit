@@ -65,6 +65,9 @@ def main():
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     
+    # Session State DEBUGGER
+    st.session_state
+    
     # Setup Audio Stream
     p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
@@ -105,35 +108,66 @@ def main():
         label_visibility='collapsed',
         horizontal=True
     )          
+    
     ## MIC or FILE
     if input_type == 'Mic':
         #  Render UI
         st.sidebar.header("🎙️ Record Audio")
         #  Setup User Mic Input
-        audio_file = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)   
+        audio_data = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)   
+        
+        # DEBUG
+        print("🎙️ setup_mic: ", audio_data)
+        print("🎙️ audio_data type: ", type(audio_data))
+        print()
+        
+        # if st.sidebar.button("Load", key="load_btn"):
+
+        #     # 
+        #     # SPENCER DEBUG
+        #     # 
+            
+        #     result = model.transcribe("output.wav")
+        #     print(result["text"])
+            
+        #     if result is not None:
+        #         st.sidebar.success(
+        #             "Transcription Complete!",
+        #             icon="🤩"
+        #         )
+        #     # Render UI
+        #     st.header("✍️ Transcription 📃")
+        #     st.markdown(result["text"])
+             
+        #     #   
+        #     # SPENCER DEBUG END
+        #     #   
+            
+        # else:
+        #     print("Error Loading Audio")
          
         # DEBUG
         # print("🎤 setup_mic:", {audio_file})
         
     else:
         #  Setup User File Input
-        audio_file = setup_file()
+        audio_data = setup_file()
+        
+        
         
         # DEBUG
-        print("📂 setup_file:", audio_file)
+        print("📂 setup_file:", audio_data)
+        print("📂 audio_data type", type(audio_data))
 
     # Render UI       
     st.sidebar.header("✍️ Transcribe Audio")
 
     # Transcribe audio file
-    transcription = transcribe(audio_file, model)
+    transcription = transcribe(audio_data, model)
     
 
     # Generate Image ( Extra GOAL )
 
-    
-    # Session State DEBUGGER
-    st.session_state
     
     # main() end #
     ##############
@@ -221,17 +255,24 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
         print("audio_file_path inside setup_mic():", audio_file_path)
 
         # Load Recorded file to memory
-        if audio_file_path:
-            audio_data = load_audio_file(audio_file_path)
-            # audio_data = read_wav_file(audio_file_path)
-            # Playback Audio File
-            st.sidebar.header("🎧 Play Recorded Audio File")
-            st.sidebar.audio(
-                audio_data
-                # format='audio/wav'
-            )  
+        audio_data = whisper.load_audio(audio_file_path)
+        audio_data = whisper.pad_or_trim(audio_data) 
+    
+        st.session_state.audio_file = audio_data
+        print("audio loaded: ", audio_data)
+        
+        
+        # if audio_file_path:
+        #     audio_data = load_audio_file(audio_file_path)
+        #     # audio_data = read_wav_file(audio_file_path)
+        #     # Playback Audio File
+        #     st.sidebar.header("🎧 Play Recorded Audio File")
+        #     st.sidebar.audio(
+        #         audio_data,
+        #         format='audio/wav'
+        #     )          
             
-    return audio_data 
+    return audio_data
     
 ## if FILE
 def setup_file():
@@ -244,6 +285,7 @@ def setup_file():
         # Supported file types
         type=["wav", "mp3", "m4a"]
     )
+        
     if audio_file:
         # Render Playback Audio File
         st.sidebar.header("🎧 Play Uploaded Audio File")
@@ -275,6 +317,9 @@ def record_audio(p, stream, rate, channels, format, frames_per_buffer):
         # Check if the "Stop" button has been clicked
         if st.session_state.stop_rec:
             break
+    
+    # DEBUG
+    # print()
         
     # Reset stop_rec for future recordings
     st.session_state.stop_rec = False
@@ -297,9 +342,9 @@ def record_audio(p, stream, rate, channels, format, frames_per_buffer):
         # combine all elements in frames list into a binary string
         frames_bytes = b"".join(frames)
         file.writeframes(frames_bytes)
-    
+
     # Store file in session_state
-    st.session_state.audio_file = output_file_path
+    # st.session_state.audio_file = output_file_path
     # print("Session State audio_file: ", st.session_state.audio_file)
     
     return output_file_path
@@ -307,57 +352,25 @@ def record_audio(p, stream, rate, channels, format, frames_per_buffer):
 
 def load_audio_file(audio_file_path) :
     # Open audio file
-    with wave.open(audio_file_path, 'rb') as file:
-        # Audio Length
-        audio_data = file.getnframes() / file.getframerate()
-        print(f"Loaded audio file length: {audio_data}")
+    # with wave.open(audio_file_path, 'rb') as file:
+    #     # Audio Length
+    #     audio_data = file.getnframes() / file.getframerate()
+    #     print(f"Loaded audio file length: {audio_data}")
         
-        # Read Audio Frames
-        frames = file.readframes(-1)
-        print("Types of frames object:", type(frames), type(frames[0]))
+    #     # Read Audio Frames
+    #     frames = file.readframes(-1)
+    #     print("Types of frames object:", type(frames), type(frames[0]))
         
     # Convert frames to a byte string
-    audio_byte_string = BytesIO(frames)
-        
-    return frames
+    # audio_byte_string = BytesIO(frames)
+    
+    audio = whisper.load_audio(audio_file_path)
+    
+    st.session_state.audio_file = audio
+    print("audio loaded: ", audio)
+    
+    return audio
 
-
-def read_wav_file(filepath: str) -> dict:
-    """Reads a WAV file and returns a dictionary with file metadata.
-
-    Args:
-        filepath (str): The path to the WAV file.
-
-    Returns:
-        dict: A dictionary with the file ID, name, type, and size.
-    """
-
-    # Open the file in binary mode
-    with io.open(filepath, 'rb') as file:
-        # Read the RIFF header
-        riff, size, fmt = struct.unpack('<4sI4s', file.read(12))
-
-        # Read the format chunk
-        chunk_id, chunk_size, audio_format, num_channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack('<4sIHHIIHH', file.read(24))
-
-        # Read the data chunk
-        data_id, data_size = struct.unpack('<4sI', file.read(8))
-        data = file.read(data_size)
-
-        # Get file metadata
-        file_id = 6  # Replace this with the actual file ID you want to use
-        file_name = os.path.basename(filepath)
-        file_type = 'audio/wav'
-        file_size = os.path.getsize(filepath)
-
-        # Return metadata as a dictionary
-        return {
-            'id': file_id,
-            'name': file_name,
-            'type': file_type,
-            'size': file_size
-        }
-        
 
 # Transcribe Audio
 def transcribe(audio_file, model):
