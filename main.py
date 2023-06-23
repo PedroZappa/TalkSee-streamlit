@@ -121,30 +121,6 @@ def main():
         print("🎙️ audio_data type: ", type(audio_data))
         print()
         
-        # if st.sidebar.button("Load", key="load_btn"):
-
-        #     # 
-        #     # SPENCER DEBUG
-        #     # 
-            
-        #     result = model.transcribe("output.wav")
-        #     print(result["text"])
-            
-        #     if result is not None:
-        #         st.sidebar.success(
-        #             "Transcription Complete!",
-        #             icon="🤩"
-        #         )
-        #     # Render UI
-        #     st.header("✍️ Transcription 📃")
-        #     st.markdown(result["text"])
-             
-        #     #   
-        #     # SPENCER DEBUG END
-        #     #   
-            
-        # else:
-        #     print("Error Loading Audio")
          
         # DEBUG
         # print("🎤 setup_mic:", {audio_file})
