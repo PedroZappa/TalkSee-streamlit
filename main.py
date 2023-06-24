@@ -62,30 +62,37 @@ def main():
     
     # Streamlit UI: Title
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
-    st.text(f"Torch Status: {DEVICE}")
+    # UI Columns
+    col1, col2 = st.columns(2)
+    with col2:
+        st.text(f"Torch Status: {DEVICE}")
+    
     
     # Select WhisperAI model
     model = None
-    whisper_selected = st.selectbox(
-        'Available Multilingual Models',
-        ('tiny', 'base', 'small', 'medium', 'large', 'large-v2'),
-        help="""
-            |  Size  | Parameters | Multilingual model | Required VRAM | Relative speed |
-            |:------:|:----------:|:------------------:|:-------------:|:--------------:|
-            |  tiny  |    39 M    |       `tiny`       |     ~1 GB     |      ~32x      |
-            |  base  |    74 M    |       `base`       |     ~1 GB     |      ~16x      |
-            | small  |   244 M    |      `small`       |     ~2 GB     |      ~6x       |
-            | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
-            | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
-        """
-    )
+    with col1:
+        whisper_select = st.selectbox(
+            'Available Multilingual Models',
+            ('tiny', 'base', 'small', 'medium', 'large', 'large-v2'),
+            help="""
+                |  Size  | Parameters | Multilingual model | Required VRAM | Relative speed |
+                |:------:|:----------:|:------------------:|:-------------:|:--------------:|
+                |  tiny  |    39 M    |       `tiny`       |     ~1 GB     |      ~32x      |
+                |  base  |    74 M    |       `base`       |     ~1 GB     |      ~16x      |
+                | small  |   244 M    |      `small`       |     ~2 GB     |      ~6x       |
+                | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
+                | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
+            """
+        )
     ## Get models path
-    whisper_file = os.path.join(models_path, f"{whisper_selected}.pt")
+    whisper_file = os.path.join(models_path, f"{whisper_select}.pt")
     print(whisper_file)
     
     ## Check if selected model exists
-    model = model_exists(whisper_selected, DEVICE, models_path)
+    model, whisper_selected = model_exists(whisper_select, DEVICE, models_path)
     
+    with col2:
+        alert = st.text(f"✅ Loaded Model: {whisper_selected}")
     
     # Get user input
     ## Select Input Mode
@@ -165,7 +172,23 @@ def model_exists(whisper_selected, device, models_path):
             # whisper_progress = st.progress(0, text=progress_text)
             
             # Load Model
-            model = load_whisper(whisper_selected, device, models_path, whisper_select)
+            # model = load_whisper(whisper_selected, device, models_path, whisper_select)
+            
+            if whisper_selected:
+                model = whisper.load_model(
+                    whisper_selected,
+                    device=device,
+                    download_root=models_path
+                )
+                
+                # show loaded model if selected
+                if model:
+                    # Update Session State
+                    st.session_state.whisper_loaded = True
+                    
+                    # Render UI
+                    whisper_select.empty() 
+                
             
             # Render UI
             download_info.empty()
@@ -178,28 +201,28 @@ def model_exists(whisper_selected, device, models_path):
     
     # model = load_whisper(whisper_selected, device, models_path, whisper_select)
     
-    return model
+    return model, whisper_selected
 
 
 # Load Whisper Models
 # @st.cache_resource() 
 def load_whisper(whisper_selected, device, models_path, whisper_select):
     ## Load user selected model
-    if whisper_selected:
-        model = whisper.load_model(
-            whisper_selected,
-            device=device,
-            download_root=models_path
-        )
+    # if whisper_selected:
+    #     model = whisper.load_model(
+    #         whisper_selected,
+    #         device=device,
+    #         download_root=models_path
+    #     )
            
-        # show loaded model if selected
-        if model:
-            # Update Session State
-            st.session_state.whisper_loaded = True
+    #     # show loaded model if selected
+    #     if model:
+    #         # Update Session State
+    #         st.session_state.whisper_loaded = True
             
-            # Render UI
-            alert = st.text(f"✅ Loaded Model: {whisper_selected}")
-            whisper_select.empty() 
+    #         # Render UI
+    #         alert = st.text(f"✅ Loaded Model: {whisper_selected}")
+    #         whisper_select.empty() 
         
         return model
 
