@@ -11,7 +11,6 @@ from io import BytesIO
 import io
 import tempfile
 
-
 # Load env variables from .env file
 load_dotenv()
 # Setup Model Storage
@@ -95,7 +94,7 @@ def main():
     # Get user input
     ## Select Input Mode
     with col2:
-        st.header("Select I/O Mode")
+        st.header("Select Input Mode")
         input_type = st.radio(
             'Select Input Mode',
             ('Mic', 'File'),
@@ -107,7 +106,7 @@ def main():
         ## MIC or FILE
         if input_type == 'Mic':
             #  Render UI
-            st.header("🎙️ Record Audio")
+            # st.header("🎙️ Record Audio")
             #  Setup User Mic Input
             audio_data = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)   
             
@@ -210,7 +209,7 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     audio_data = None
         
     # if button clicked
-    if st.button("Record", key='record_btn'):  
+    if st.button("🎙️ Record Audio", key='record_btn'):  
         seconds = 6
         frames = []
 
@@ -264,6 +263,9 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
         uploaded_file = BytesIO(file_content)
         uploaded_file.name = 'output.wav'
         uploaded_file.type = 'audio/wav'
+        uploaded_file.id = len(st.session_state.audio_file) if st.session_state.audio_file is not None else 0
+        uploaded_file.size = len(file_content)
+
         
         # Convert BytesIO object to a file-like object
         file_like_object = io.BytesIO(uploaded_file.getvalue())
