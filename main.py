@@ -66,20 +66,16 @@ def main():
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     
-    # Session State DEBUGGER
-    st.session_state
-    
     # Setup Audio Stream
     p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Streamlit UI: Title
-    st.sidebar.title("🗣 ⇢  👀 : a speech-2-text web app")
-    st.sidebar.text(f"Torch Status: {DEVICE}")
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
+    st.text(f"Torch Status: {DEVICE}")
     
     # Select WhisperAI model
     model = None
-    whisper_selected = st.sidebar.selectbox(
+    whisper_selected = st.selectbox(
         'Available Multilingual Models',
         ('tiny', 'base', 'small', 'medium', 'large', 'large-v2'),
         help="""
@@ -102,8 +98,8 @@ def main():
     
     # Get user input
     ## Select Input Mode
-    st.sidebar.header("Select I/O Mode")
-    input_type = st.sidebar.radio(
+    st.header("Select I/O Mode")
+    input_type = st.radio(
         'Select Input Mode',
         ('Mic', 'File'),
         label_visibility='collapsed',
@@ -113,7 +109,7 @@ def main():
     ## MIC or FILE
     if input_type == 'Mic':
         #  Render UI
-        st.sidebar.header("🎙️ Record Audio")
+        st.header("🎙️ Record Audio")
         #  Setup User Mic Input
         audio_data = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER)   
         
@@ -132,7 +128,7 @@ def main():
 
 
     # Render UI       
-    st.sidebar.header("✍️ Transcribe Audio")
+    st.header("✍️ Transcribe Audio")
 
 
     # Transcribe audio file
@@ -141,6 +137,9 @@ def main():
 
     # Generate Image ( Extra GOAL )
 
+
+    # Session State DEBUGGER
+    st.session_state
     
     # main() end #
     ##############
@@ -163,10 +162,10 @@ def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
 
 def model_exists(whisper_selected, device, models_path):
     if not whisper_selected:
-        st.sidebar.warning(f"Select a model! ⏫", icon="🚨")     
+        st.warning(f"Select a model! ⏫", icon="🚨")     
     
     else:
-        whisper_select = st.sidebar.info(f"Selected Whisper Model: {whisper_selected}", icon="👆")
+        whisper_select = st.info(f"Selected Whisper Model: {whisper_selected}", icon="👆")
         
         ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
@@ -221,13 +220,13 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
     audio_data = None
         
     # if button clicked
-    if st.sidebar.button("Record", key='record_btn'):  
+    if st.button("Record", key='record_btn'):  
         seconds = 6
         frames = []
 
         # Render UI
         print("Recording...")
-        rec_feedback = st.sidebar.info(
+        rec_feedback = st.info(
             "Recording...", 
             icon="🔴"
         )
@@ -266,18 +265,12 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
             # combine all elements in frames list into a binary string
             frames_bytes = b"".join(frames)
             file.writeframes(frames_bytes)
-
-        # Store file in session_state
-        # st.session_state.audio_file = output_file_path
-        # print("Session State audio_file: ", st.session_state.audio_file)
-        
-        # print("audio_file_path inside setup_mic():", audio_file_path)
         
         # Read the binary content of the file
         with open('output.wav', 'rb') as f:
             file_content = f.read()
 
-        # Create a BytesIO object
+        # Create a BytesIO object // Set name and type
         uploaded_file = BytesIO(file_content)
         uploaded_file.name = 'output.wav'
         uploaded_file.type = 'audio/wav'
@@ -297,6 +290,7 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
         # Clean up temporary file
         os.unlink(temp_file.name)
         
+        # Update Session_State
         st.session_state.audio_file = uploaded_file
         print("audio loaded: ", audio_data)
 
@@ -317,8 +311,8 @@ def setup_file():
         
     if audio_file:
         # Render Playback Audio File
-        st.sidebar.header("🎧 Play Uploaded Audio File")
-        st.sidebar.audio(audio_file)
+        st.header("🎧 Play Uploaded Audio File")
+        st.audio(audio_file)
                 
     return audio_file
 
@@ -327,13 +321,13 @@ def setup_file():
 def transcribe(audio_file, model):
     transcription = {}
     
-    if st.sidebar.button("Transcribe!"):
+    if st.button("Transcribe!"):
         if audio_file is not None:
             #  Render UI
-            feedback = st.sidebar.info("Transcribing...")
+            feedback = st.info("Transcribing...")
             # audio_file.name == filePath
             transcription = model.transcribe(audio_file.name)
-            st.sidebar.success(
+            st.success(
                 "Transcription Complete!",
                 icon="🤩"
             )
@@ -342,7 +336,7 @@ def transcribe(audio_file, model):
             st.markdown(transcription["text"])
             feedback.empty()
         else:
-            st.sidebar.error("Please input a valid audio file!")
+            st.error("Please input a valid audio file!")
     
     # print("Transcription:", transcription['text'])
     # mel = whisper.log_mel_spectrogram(audio).to(model.device)
