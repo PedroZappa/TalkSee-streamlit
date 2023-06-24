@@ -1,22 +1,15 @@
 from dotenv import load_dotenv
 import streamlit as st
-from audio_recorder_streamlit import audio_recorder
-import whisper 
 import time
 import os
 import torch
 import pyaudio
+import whisper 
 import wave
 from tqdm.auto import tqdm
-import numpy as np
-import io
 from io import BytesIO
-from scipy.io import wavfile
-import json
-import struct
 import io
 import tempfile
-import shutil
 
 
 # Load env variables from .env file
@@ -64,8 +57,6 @@ def stop_rec():
 
 # DEBUG Session State
 print("⚠️  Session State:", st.session_state)
-
-# json.dumps(json.loads(st.session_state), indent=4)
 
 
 def main():
