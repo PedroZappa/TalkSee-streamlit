@@ -31,13 +31,6 @@ RATE = 16000
 model_file = ''
 whisper_file = ''
 audio_file = None
-
-class UploadedFile:
-    def __init__(self, id, name, type, size):
-        self.id = id
-        self.name = name
-        self.type = type
-        self.size = size
         
 
 # Initialize Session State
@@ -293,6 +286,11 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer):
         # Update Session_State
         st.session_state.audio_file = uploaded_file
         print("audio loaded: ", audio_data)
+        
+        if audio_data.size > 0:
+            # Render Playback Audio File
+            st.header("🎧 Play Recorded Audio File")
+            st.audio(uploaded_file)
 
     return st.session_state.audio_file if st.session_state.audio_file else None
     
@@ -337,11 +335,7 @@ def transcribe(audio_file, model):
             feedback.empty()
         else:
             st.error("Please input a valid audio file!")
-    
-    # print("Transcription:", transcription['text'])
-    # mel = whisper.log_mel_spectrogram(audio).to(model.device)
 
-            
     return transcription
     
 
