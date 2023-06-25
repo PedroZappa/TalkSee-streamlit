@@ -168,19 +168,22 @@ def model_exists(whisper_selected, device, models_path, col1, col2):
 
             with col1:
                 download_info = st.info(f"Downloading Whisper {whisper_selected} model...")
-                # whisper_progress = st.progress(0, text=progress_text)
-
                 
                 if whisper_selected:
                     # Create a separate thread for downloading the model
-                    download_thread = threading.Thread(target=download_model, args=(whisper_selected, device, models_path))
+                    download_thread = threading.Thread(
+                        target=download_model, 
+                        args=(whisper_selected, device, models_path)
+                    )
                     download_thread.start()
                     
                     # Use stqdm progress bar to show progress while the model is downloading
                     with stqdm(total=100, desc="Downloading", bar_format="{l_bar}{bar} [ETA: {remaining}]", ncols=100) as progress_bar:
                         for percent in range(100):
                             if not download_thread.is_alive():
-                                progress_bar.update(100 - progress_bar.n)  # Complete the progress bar if the model is downloaded
+                                # If thread is running
+                                progress_bar.update(100 - progress_bar.n)  
+                                # Complete the progress bar if the model is downloaded
                                 break
                             progress_bar.update(1)
                             time.sleep(0.1)
@@ -196,12 +199,11 @@ def model_exists(whisper_selected, device, models_path, col1, col2):
                 
                 # Render UI
                 download_info.empty()
-                    
-                # Progress Update
-                # with stqdm(total=100, desc="Downloading", bar_format="{l_bar}{bar} [ETA: {remaining}]", ncols=100) as progress_bar:
-                #     for percent in range(100):
-                #         progress_bar.update(1)
-                #         time.sleep(0.1)
+                
+        else:
+            # If model exists setup model object
+            model = download_model(whisper_selected, device, models_path)
+            print("Model Already DLd: ", model)
     
     return model, whisper_selected
 
@@ -224,18 +226,21 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
     if 'stop_rec' not in st.session_state:
         st.session_state.stop_rec = False
     
-    # Create Stop button
-    # if st.button("Stop", key='stop_rec_btn'):
-    #     st.session_state.stop_rec = True
+    # Create a record button
+    record_button = col2.button("🎙️ Record", key='rec_btn')
         
     # if button clicked
-    if st.button("🎙️ Record", key='rec_btn'):  
+    if record_button:  
         frames = []
 
         # Render UI
         print("Recording...")
         rec_feedback = st.info("Recording...", icon="🔴")
         # start_time = time.time()
+        
+        # Initialize the progress bar placeholder
+        progress_placeholder = st.empty()
+        progress_bar = progress_placeholder.progress(0)
         
         # Record Audio input
         for i in range(int(rate / frames_per_buffer * duration)):
@@ -244,9 +249,16 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
             data = stream.read(frames_per_buffer, exception_on_overflow=False)
             frames.append(data)  
             
+            # Update the progress bar
+            progress = (i + 1) / (rate / frames_per_buffer * duration)
+            progress_bar.progress(progress)
+            
             if st.session_state.stop_rec:
                 print("Recording Stopped")
                 break
+    
+        # Clear the progress bar when it's full
+        progress_placeholder.empty()
             
         # Reset stop_rec for future recordings
         st.session_state.stop_rec = False
@@ -260,7 +272,7 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
             
         # Render UI
         rec_feedback.empty()
-        # stop_rec.empty()
+        # progress.empty()
 
         # Save Recorded Audio to file
         output_file_path = "output.wav"
