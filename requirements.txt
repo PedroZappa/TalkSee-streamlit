@@ -1,7 +1,7 @@
+python-dotenv
 streamlit
-whisper
 torch
 pyaudio
-numpy
+whisper
+wave
 tqdm
-python-dotenv
