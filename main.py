@@ -42,6 +42,10 @@ if 'audio_file' not in st.session_state:
     
 if 'whisper_loaded' not in st.session_state:
     st.session_state.whisper_loaded = False
+    
+if 'model' not in st.session_state:
+    st.session_state.model = None
+
 
 # Change Session State
 def stop_rec():
@@ -89,9 +93,15 @@ def main():
     whisper_file = os.path.join(models_path, f"{whisper_select}.pt")
     print(whisper_file)
     
-    ## Check if selected model exists
-    model, whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
+    whisper_selected = None
     
+    # ## Check if selected model exists
+    # if submit_button:
+    
+    # Get model (if not already loaded)
+    if st.session_state.model is None:
+        st.session_state.model, whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
+        
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
         alert = st.text(f"✅ Loaded Model: {whisper_selected}")
@@ -133,7 +143,7 @@ def main():
 
     # Transcribe audio file
     if audio_data is not None:
-        transcription = transcribe(audio_data, model)
+        transcription = transcribe(audio_data, st.session_state.model)
 
     # Session State DEBUGGER
     with st.expander("Session State"):
