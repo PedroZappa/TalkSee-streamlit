@@ -6,10 +6,12 @@ import torch
 import pyaudio
 import whisper 
 import wave
-from tqdm.auto import tqdm
+from stqdm import stqdm
 from io import BytesIO
 import io
 import tempfile
+import threading
+
 
 # Load env variables from .env file
 load_dotenv()
@@ -88,7 +90,7 @@ def main():
     print(whisper_file)
     
     ## Check if selected model exists
-    model, whisper_selected = model_exists(whisper_select, DEVICE, models_path)
+    model, whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
     
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
@@ -156,50 +158,61 @@ def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
     return p, stream
 
 
-def model_exists(whisper_selected, device, models_path):
+def model_exists(whisper_selected, device, models_path, col1, col2):
     if not whisper_selected:
         st.warning(f"Select a model! ⏫", icon="🚨")     
     
     else:
-        whisper_select = st.info(f"Selected Whisper Model: {whisper_selected}", icon="👆")
-        
         ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
 
-            download_info = st.info(f"Downloading Whisper {whisper_selected} model...")
-            # whisper_progress = st.progress(0, text=progress_text)
-            
-            # Load Model
-            # model = load_whisper(whisper_selected, device, models_path, whisper_select)
-            
-            if whisper_selected:
-                model = whisper.load_model(
-                    whisper_selected,
-                    device=device,
-                    download_root=models_path
-                )
+            with col1:
+                download_info = st.info(f"Downloading Whisper {whisper_selected} model...")
+                # whisper_progress = st.progress(0, text=progress_text)
+
                 
-                # show loaded model if selected
-                if model:
-                    # Update Session State
-                    st.session_state.whisper_loaded = True
+                if whisper_selected:
+                    # Create a separate thread for downloading the model
+                    download_thread = threading.Thread(target=download_model, args=(whisper_selected, device, models_path))
+                    download_thread.start()
                     
-                    # Render UI
-                    whisper_select.empty() 
+                    # Use stqdm progress bar to show progress while the model is downloading
+                    with stqdm(total=100, desc="Downloading", bar_format="{l_bar}{bar} [ETA: {remaining}]", ncols=100) as progress_bar:
+                        for percent in range(100):
+                            if not download_thread.is_alive():
+                                progress_bar.update(100 - progress_bar.n)  # Complete the progress bar if the model is downloaded
+                                break
+                            progress_bar.update(1)
+                            time.sleep(0.1)
+
+                    # Wait for the download thread to finish and get the model
+                    download_thread.join()
+                    model = download_model(whisper_selected, device, models_path)
+                        
+                    # show loaded model if selected
+                    if model:
+                        # Update Session State
+                        st.session_state.whisper_loaded = True
                 
-            
-            # Render UI
-            download_info.empty()
-                
-            # Progress Update
-            # for percent in tqdm():
-            #     time.sleep(0.1)
-        # time.sleep(3) # Wait for 3 seconds
-        # alert.empty() # Clear the alert
-    
-    # model = load_whisper(whisper_selected, device, models_path, whisper_select)
+                # Render UI
+                download_info.empty()
+                    
+                # Progress Update
+                # with stqdm(total=100, desc="Downloading", bar_format="{l_bar}{bar} [ETA: {remaining}]", ncols=100) as progress_bar:
+                #     for percent in range(100):
+                #         progress_bar.update(1)
+                #         time.sleep(0.1)
     
     return model, whisper_selected
+
+
+def download_model(whisper_selected, device, models_path):
+    model = whisper.load_model(
+        whisper_selected,
+        device=device,
+        download_root=models_path
+    )
+    return model
 
 
 # Handle User Input 
@@ -212,8 +225,8 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
         st.session_state.stop_rec = False
     
     # Create Stop button
-    if st.button("Stop", key='stop_rec_btn'):
-        st.session_state.stop_rec = True
+    # if st.button("Stop", key='stop_rec_btn'):
+    #     st.session_state.stop_rec = True
         
     # if button clicked
     if st.button("🎙️ Record", key='rec_btn'):  

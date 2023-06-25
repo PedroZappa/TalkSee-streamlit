@@ -4,4 +4,4 @@ torch
 pyaudio
 whisper
 wave
-tqdm
+stqdm
