@@ -31,33 +31,35 @@ DURATION = 11
 model_file = ''
 whisper_file = ''
 audio_file = None
-        
-
-# Initialize Session State
-if 'stop_rec' not in st.session_state:
-    st.session_state.stop_rec = False
-    
-if 'audio_file' not in st.session_state:
-    st.session_state.audio_file = None
-    
-if 'whisper_loaded' not in st.session_state:
-    st.session_state.whisper_loaded = False
-    
-if 'model' not in st.session_state:
-    st.session_state.model = None
-
-
-# Change Session State
-def stop_rec():
-    # On button clicked
-    st.session_state.stop_rec = True
-
-# DEBUG Session State
-print("⚠️  Session State:", st.session_state)
 
 
 def main():
     global audio_file
+    
+    # Initialize Session State
+    if 'stop_rec' not in st.session_state:
+        st.session_state.stop_rec = False
+        
+    if 'audio_file' not in st.session_state:
+        st.session_state.audio_file = None
+        
+    if 'whisper_loaded' not in st.session_state:
+        st.session_state.whisper_loaded = False
+        
+    if 'model' not in st.session_state:
+        st.session_state.model = None
+        
+    if 'transcribe_flag' not in st.session_state:
+        st.session_state.transcribe_flag = False
+        
+    # Change Session State
+    def stop_rec():
+        # On button clicked
+        st.session_state.stop_rec = True
+
+    # DEBUG Session State
+    print("⚠️ Session State:", st.session_state)
+    
     
     # Check if CUDA is available
     torch.cuda.is_available()
@@ -91,31 +93,27 @@ def main():
         )
     ## Get models path
     whisper_file = os.path.join(models_path, f"{whisper_select}.pt")
-    print(whisper_file)
-    
     whisper_selected = None
     
-    # ## Check if selected model exists
-    # if submit_button:
-    
     # Get model (if not already loaded)
-    if st.session_state.model is None:
+    if st.session_state.model is None or st.session_state.model != whisper_select:
         st.session_state.model, whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
         
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
-        alert = st.text(f"✅ Loaded Model: {whisper_selected}")
+        alert = st.text(f"✅ Model Loaded: {whisper_selected}")
     
     # Get user input
     ## Select Input Mode
-    with col1:
+    with col2:
         st.header("Select Input Mode")
         input_type = st.radio(
             'Select Input Mode',
             ('Mic', 'File'),
             label_visibility='collapsed',
             horizontal=True
-        )          
+        )     
+        st.empty()     
             
     with col2:
         ## MIC or FILE
@@ -127,8 +125,7 @@ def main():
             
             # DEBUG
             print("🎙️ setup_mic: ", audio_data)
-            print("🎙️ audio_data type: ", type(audio_data))
-            print()
+            print("🎙️ type: ", type(audio_data))
             
         else:
             #  Render UI
@@ -138,12 +135,13 @@ def main():
             
             # DEBUG
             print("📂 setup_file:", audio_data)
-            print("📂 audio_data type", type(audio_data))
+            print("📂 type:", type(audio_data))
 
 
     # Transcribe audio file
-    if audio_data is not None:
-        transcription = transcribe(audio_data, st.session_state.model)
+    if audio_data is not None and st.session_state.transcribe_flag:
+        transcription = transcribe(audio_data, st.session_state.model, col1, col2)
+        st.session_state.transcribe_flag = False  # Reset the flag
 
     # Session State DEBUGGER
     with st.expander("Session State"):
@@ -237,7 +235,7 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
         st.session_state.stop_rec = False
     
     # Create a record button
-    record_button = col2.button("🎙️ Record", key='rec_btn')
+    record_button = st.button("🎙️ Record", key='rec_btn')
         
     # if button clicked
     if record_button:  
@@ -251,6 +249,11 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
         # Initialize the progress bar placeholder
         progress_placeholder = st.empty()
         progress_bar = progress_placeholder.progress(0)
+        
+        # void stopbutton()
+        # {
+        #      duration = (endTime (currentTime) - startTime) / 60;
+        # }
         
         # Record Audio input
         for i in range(int(rate / frames_per_buffer * duration)):
@@ -322,6 +325,7 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
         
         # Update Session_State
         st.session_state.audio_file = uploaded_file
+        st.session_state.transcribe_flag = True
         
         if audio_data.size > 0:
             # Render Playback Audio File
@@ -349,6 +353,9 @@ def setup_file(col1, col2):
             label_visibility='collapsed'
         )
         
+        # Update Session_State
+        st.session_state.transcribe_flag = True
+        
         if audio_file:
             # Render Playback Audio File
             st.header("🎧 Uploaded File")
@@ -358,7 +365,7 @@ def setup_file(col1, col2):
 
 
 # Transcribe Audio
-def transcribe(audio_file, model):
+def transcribe(audio_file, model, col1, col2):
     transcription = {}
     
     # if st.button("Transcribe!"):
@@ -372,10 +379,11 @@ def transcribe(audio_file, model):
         st.header("✍️ Transcription")
         st.markdown(transcription["text"])
         feedback.empty()
-        st.success(
-                "Transcription Complete!",
-                icon="🤩"
-            )
+        with col1:
+            st.success(
+                    "Transcription Complete!",
+                    icon="🤩"
+                )
     else:
         st.error("Please input a valid audio file!")
 
