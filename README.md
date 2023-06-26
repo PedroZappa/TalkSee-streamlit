@@ -1,4 +1,4 @@
-# 🗣 ⇢ _`TalkSee`_  ⇢ 👀 : a `speech-2-text`
+# 🗣 ⇢ _`TalkSee`_  ⇢ 👀
 
 ## Software Design Document (SDD)
 
@@ -36,7 +36,7 @@ ___
 
 ### _Speech Recognition/Transcription_
 
-> Uses the WhisperAI model to transcribe the user audio input into text.
+> Employs a `WhisperAI ASR` model to transcribe the user audio input into text.
 
 ### _Text Output_
 
@@ -52,17 +52,29 @@ The 🗣 ⇢ _`TalkSee`_  ⇢ 👀 web app relies on the following external libr
 
 - [python-dotenv](https://github.com/theskumar/python-dotenv): Provides environment variables.
 
+- [os](https://docs.python.org/3/library/os.html): Provides operating system interface.
+
+- [time](https://docs.python.org/3/library/time.html): Provides time functionality.
+
+- [io](https://docs.python.org/3/library/io.html): Provides input/output functionality.
+
+- [tempfile](https://docs.python.org/3/library/tempfile.html): Provides temporary file functionality.
+
+- [threading](https://docs.python.org/3/library/threading.html): Provides threading functionality.
+
+___
+
 - [Streamlit](https://streamlit.io/): Provides the user interface framework;
 
-- [stqdm](https://pypi.org/project/stqdm/): Provides progress bar display for streamlit apps;
+- [audio_recorder_streamlit](https://pypi.org/project/audio-recorder-streamlit/): Provides the audio input stream;
 
-- [PyTorch](https://pytorch.org/docs/stable/torch.html): Supports model loading and inference;
+- [stqdm](https://pypi.org/project/stqdm/): Provides progress bar display for model loading and recording audio;
+
+- [PyTorch](https://pytorch.org/docs/stable/torch.html): Provides the neural network library for GPU processing;
 
 - [WhisperAI ASR](https://github.com/openai/whisper): Provides the speech recognition functionality;
 
-- [PyAudio](https://pypi.org/project/PyAudio/): Handles audio input stream from the microphone;
 
-- [Wave](https://docs.python.org/3/library/wave.html): Write audio input to file;
 
 ___
 
@@ -157,3 +169,7 @@ ___
 
 [BACK TO TOP](#top)
 
+
+## TODO -->
+
+- progress bar  for transcriptions
