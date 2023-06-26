@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
 import streamlit as st
+from audio_recorder_streamlit import audio_recorder
 import time
 import os
 import torch
-import pyaudio
+# import pyaudio
 import whisper 
 import wave
 from stqdm import stqdm
@@ -21,11 +22,11 @@ models_path = os.environ.get("MODELS_PATH")
 os.chmod(models_path, 0o775)
 
 # AUDIO CONSTANTS
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 16000
-FRAMES_PER_BUFFER = 3200
-DURATION = 11
+# FORMAT = pyaudio.paInt16
+# CHANNELS = 1
+# RATE = 16000
+# FRAMES_PER_BUFFER = 3200
+# DURATION = 11
 
 # Init vars
 model_file = ''
@@ -58,7 +59,7 @@ def main():
         st.session_state.stop_rec = True
 
     # DEBUG Session State
-    print("⚠️ Session State:", st.session_state)
+    # print("⚠️ Session State:", st.session_state)
     
     
     # Check if CUDA is available
@@ -66,7 +67,7 @@ def main():
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     
     # Setup Audio Stream
-    p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
+    # p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Streamlit UI: Title
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
@@ -96,7 +97,7 @@ def main():
     whisper_selected = None
     
     # Get model (if not already loaded)
-    if st.session_state.model is None or st.session_state.model != whisper_select:
+    if st.session_state.model is None:
         st.session_state.model, whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
         
     with col1:
@@ -121,11 +122,11 @@ def main():
             #  Render UI
             st.header("🎙️ Record Audio")
             #  Setup User Mic Input
-            audio_data = setup_mic(p, stream, RATE, CHANNELS, FORMAT, FRAMES_PER_BUFFER, DURATION, col1, col2)   
+            audio_data = setup_mic(col1, col2)   
             
             # DEBUG
-            print("🎙️ setup_mic: ", audio_data)
-            print("🎙️ type: ", type(audio_data))
+            # print("🎙️ setup_mic: ", audio_data)
+            # print("🎙️ type: ", type(audio_data))
             
         else:
             #  Render UI
@@ -134,8 +135,8 @@ def main():
             audio_data = setup_file(col1, col2)
             
             # DEBUG
-            print("📂 setup_file:", audio_data)
-            print("📂 type:", type(audio_data))
+            # print("📂 setup_file:", audio_data)
+            # print("📂 type:", type(audio_data))
 
 
     # Transcribe audio file
@@ -149,21 +150,6 @@ def main():
     
     # main() end # 
     ##############
-
-
-# Setup Audio Stream 
-def create_pyaudio_stream(format, channels, rate, frames_per_buffer):
-    ## Create PyAudio
-    p = pyaudio.PyAudio()
-    ## Init Stream
-    stream = p.open(
-        format=format, 
-        channels=channels, 
-        rate=rate, 
-        input=True, 
-        frames_per_buffer=frames_per_buffer
-    )
-    return p, stream
 
 
 def model_exists(whisper_selected, device, models_path, col1, col2):
@@ -226,104 +212,122 @@ def download_model(whisper_selected, device, models_path):
 
 
 # Handle User Input 
-def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, col1, col2):
+def setup_mic(col1, col2):
     global audio_file
     audio_data = None
-    
-    # Initialize st.session_state.stop_rec if not already initialized
-    if 'stop_rec' not in st.session_state:
-        st.session_state.stop_rec = False
-    
-    # Create a record button
-    record_button = st.button("🎙️ Record", key='rec_btn')
         
+    #  Streamlit Audio Recorder
+    audio_bytes = audio_recorder(
+        text='Record Audio',
+        # icon_name="mic",
+        pause_threshold=2.0, 
+        sample_rate=41_000
+    )
+    
     # if button clicked
-    if record_button:  
+    if audio_bytes:  
         frames = []
 
         # Render UI
         print("Recording...")
-        rec_feedback = st.info("Recording...", icon="🔴")
+        # rec_feedback = st.info("Recording...", icon="🔴")
         # start_time = time.time()
         
         # Initialize the progress bar placeholder
         progress_placeholder = st.empty()
         progress_bar = progress_placeholder.progress(0)
         
-        # void stopbutton()
-        # {
-        #      duration = (endTime (currentTime) - startTime) / 60;
-        # }
+        # Initialize the counter variable
+        # i = 0
         
         # Record Audio input
-        for i in range(int(rate / frames_per_buffer * duration)):
-        # while time.time() - start_time < duration:
+        # for i in range(int(rate / frames_per_buffer * duration)):
         # while True:
-            data = stream.read(frames_per_buffer, exception_on_overflow=False)
-            frames.append(data)  
+        #     data = stream.read(frames_per_buffer, exception_on_overflow=False)
+        #     frames.append(data)  
+            
+        #     # Update the duration
+        #     duration = range(int(rate / frames_per_buffer * (time.time() - start_time)))
             
             # Update the progress bar
-            progress = (i + 1) / (rate / frames_per_buffer * duration)
-            progress_bar.progress(progress)
+            # progress = min((i + 1) / (rate / frames_per_buffer * len(duration)), 1.0)
+
+            # progress_bar.progress(progress)
             
-            if st.session_state.stop_rec:
-                print("Recording Stopped")
-                break
+            # Increment the counter variable
+            # i += 1  # Add this line
+            
+            # Check if the stop button is clicked and update st.session_state.stop_rec
+            # if stop_button:
+            #     st.session_state.stop_rec = True
+                # print(st.session_state.stop_rec)
+            
+            # if getattr(st.session_state, 'stop_rec', False):
+            #     print("Recording Stopped")
+            #     break
     
         # Clear the progress bar when it's full
         progress_placeholder.empty()
             
         # Reset stop_rec for future recordings
-        st.session_state.stop_rec = False
+        # st.session_state.stop_rec = False
+        # st.session_state.rec_btn = False
             
         # Check if recording is done
-        if not st.session_state.stop_rec:
-            print("Recording Finished!")
-        else:
-            print("Recording Stopped")
+        # if not st.session_state.stop_rec:
+        #     print("Recording Finished!")
+        # else:
+        #     print("Recording Stopped")
             
             
         # Render UI
-        rec_feedback.empty()
+        # rec_feedback.empty()
         # progress.empty()
+        
+        
 
         # Save Recorded Audio to file
-        output_file_path = "output.wav"
-        with wave.open(output_file_path, "wb") as file:
-            file.setnchannels(channels)
-            file.setsampwidth(p.get_sample_size(format))
-            file.setframerate(rate)
-            # combine all elements in frames list into a binary string
-            frames_bytes = b"".join(frames)
-            file.writeframes(frames_bytes)
+        # output_file_path = "output.wav"
+        # with wave.open(output_file_path, "wb") as file:
+        #     file.setnchannels(channels)
+        #     file.setsampwidth(p.get_sample_size(format))
+        #     file.setframerate(rate)
+        #     # combine all elements in frames list into a binary string
+        #     frames_bytes = b"".join(frames)
+        #     file.writeframes(frames_bytes)
         
         # Read the binary content of the file
         with open('output.wav', 'rb') as f:
             file_content = f.read()
+            
+        # Open file from streamlit recorder
+        with open("output.wav", "wb") as f:
+            f.write(audio_bytes)
+        # st.audio(audio_bytes, format="audio/wav")
 
-        # Create a BytesIO object // Set name and type
-        uploaded_file = BytesIO(file_content)
+        # # Create a BytesIO object // Set name and type
+        uploaded_file = BytesIO(audio_bytes)
         uploaded_file.name = 'output.wav'
         uploaded_file.type = 'audio/wav'
         uploaded_file.id = len(uploaded_file.getvalue()) if st.session_state.audio_file is not None else 0
-        uploaded_file.size = len(file_content)
+        uploaded_file.size = len(audio_bytes)
 
-        # Convert BytesIO object to a file-like object
+        # # Convert BytesIO object to a file-like object
         file_like_object = io.BytesIO(uploaded_file.getvalue())
 
-        # Create a temporary file
+        # # Create a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
             temp_file.write(uploaded_file.getvalue())
             temp_file.flush()
 
-            # Load Recorded file to memory
+        #     # Load Recorded file to memory
             audio_data = whisper.load_audio(temp_file.name)
             audio_data = whisper.pad_or_trim(audio_data) 
 
-        # Clean up temporary file
+        # # Clean up temporary file
         os.unlink(temp_file.name)
         
-        # Update Session_State
+        # # Update Session_State
         st.session_state.audio_file = uploaded_file
         st.session_state.transcribe_flag = True
         
@@ -332,10 +336,10 @@ def setup_mic(p, stream, rate, channels, format, frames_per_buffer, duration, co
             st.header("🎧 Recorded File")
             st.audio(uploaded_file)
         
-        # Close the stream and terminate the PyAudio object
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
+    # Close the stream and terminate the PyAudio object
+    # stream.stop_stream()
+    # stream.close()
+    # p.terminate()
 
     return st.session_state.audio_file if st.session_state.audio_file else None
     

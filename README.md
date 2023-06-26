@@ -82,6 +82,8 @@ ___
  | medium |   769 M    |      `medium`      |     ~5 GB     |      ~2x       |
  | large  |   1550 M   |      `large`       |    ~10 GB     |       1x       |
 
+- Checks if `CUDA` is available for `GPU` processing, else runs on `CPU`.
+
 - Support for both `microphone input` and audio `file upload`.
 
 - Real-time transcription progress display using `stqdm`.
