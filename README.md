@@ -169,7 +169,7 @@ ___
 
 [BACK TO TOP](#top)
 
-
 ## TODO -->
 
-- progress bar  for transcriptions
+- fix model loading
+- loading model UI

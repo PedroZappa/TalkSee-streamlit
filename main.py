@@ -98,28 +98,21 @@ def main():
         st.header("Select Input Mode")
         input_type = st.radio(
             'Select Input Mode',
-            ('Mic', 'File'),
+            ('🎙️ Mic', '📂 File'),
             label_visibility='collapsed',
             horizontal=True
         ) 
             
         # Get User Input
-        with col2:
-            ## MIC or FILE
-            if input_type == 'Mic':
-                #  Render UI 🎙️
-                # st.header("Record Audio")
-                #  Setup User Mic Input
-                audio_data = setup_mic(col1, col2) 
-                print("transcribe_flag:", st.session_state.transcribe_flag)
-    
-            else:
-                #  Render UI
-                # st.header("📂 Upload Audio")
-                #  Setup User File Input
-                audio_data = setup_file(col1, col2)
-                print("transcribe_flag:", st.session_state.transcribe_flag)
+        if input_type == 'Mic':
+            #  Setup User Mic Input
+            audio_data = setup_mic(col1, col2) 
 
+        else:
+            #  Setup User File Input
+            audio_data = setup_file(col1, col2)
+
+    # Transcription
     transcription_placeholder = st.empty()
     
     with col1:
@@ -128,7 +121,6 @@ def main():
 
             # Reset the flag
             st.session_state.transcribe_flag = False
-            print("transcribe_flag:", st.session_state.transcribe_flag)
             feedback_transcribing = st.info("✍️ Transcribing...")
             
             transcription = transcribe(audio_data, st.session_state.model, col1, col2)
@@ -145,7 +137,6 @@ def main():
             time.sleep(3.5)
             ui_success.empty()
 
-    
     # main() end # 
     ##############
 
@@ -158,10 +149,9 @@ def model_exists(whisper_selected, device, models_path, col1, col2):
         if not os.path.exists(whisper_file):
 
             with col1:
-                download_info = st.info(f"Loading Whisper {whisper_selected} model...")
+                download_info = st.spinner(f"Loading Whisper {whisper_selected} model...")
                 
                 if whisper_selected:
-                    # Init thread for download model
                     model = whisper.load_model(
                         whisper_selected,
                         device=device,
@@ -173,27 +163,12 @@ def model_exists(whisper_selected, device, models_path, col1, col2):
                         # Update Session State
                         st.session_state.whisper_loaded = True
                 
-                # Render UI
-                download_info.empty()
-                
-        else:
-            # If model exists setup model object
-            model = download_model(whisper_selected, device, models_path)
-            print("Model Already DLd: ", model)
+                    # Render UI
+                    # download_info.empty()
     
     return model, whisper_selected
 
 
-def download_model(whisper_selected, device, models_path):
-    model = whisper.load_model(
-        whisper_selected,
-        device=device,
-        download_root=models_path
-    )
-    return model
-
-
-# Handle User Input 
 def setup_mic(col1, col2):
     global audio_file
     audio_data = None
@@ -291,9 +266,6 @@ def transcribe(audio_file, model, col1, col2):
     
     return transcription
 
-
-def render_transcription(transcription):
-    st.markdown(transcription["text"])
 
 # Run
 if __name__ == "__main__":
