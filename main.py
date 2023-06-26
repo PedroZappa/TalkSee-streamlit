@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 import time
 import io
+import asyncio
 from io import BytesIO
 import tempfile
 import threading
@@ -26,31 +27,33 @@ whisper_file = ''
 audio_file = None
 
 
-def main():
-    global audio_file
+# Initialize Session State        
+if 'audio_file' not in st.session_state:
+    st.session_state.audio_file = None
     
-    # Initialize Session State        
-    if 'audio_file' not in st.session_state:
-        st.session_state.audio_file = None
-        
-    if 'whisper_loaded' not in st.session_state:
-        st.session_state.whisper_loaded = False
-        
-    if 'model' not in st.session_state:
-        st.session_state.model = None
-        
-    if 'transcribe_flag' not in st.session_state:
-        st.session_state.transcribe_flag = False
-        
-    # DEBUG Session State
-    # print("⚠️ Session State:", st.session_state)
+if 'whisper_selected' not in st.session_state:
+    st.session_state.whisper_selected = False
+    
+if 'whisper_loaded' not in st.session_state:
+    st.session_state.whisper_loaded = False
+    
+if 'model' not in st.session_state:
+    st.session_state.model = None
+    
+if 'transcribe_flag' not in st.session_state:
+    st.session_state.transcribe_flag = False
+
+def main():
+    audio_data = None
+    transcription = dict()
+    
+    # Session State DEBUGGER
+    with st.expander("Session State", expanded=False):
+        st.session_state
     
     # Check if CUDA is available
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    
-    # Setup Audio Stream
-    # p, stream = create_pyaudio_stream(FORMAT, CHANNELS, RATE, FRAMES_PER_BUFFER)    
     
     # Streamlit UI: Title
     st.title("🗣 ⇢ TalkSee ⇢ 👀")
@@ -80,16 +83,15 @@ def main():
     whisper_selected = None
     
     # Get model (if not already loaded)
-    if st.session_state.model is None or st.session_state.model != whisper_select:
-        st.session_state.model, whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
+    if whisper_select != st.session_state.whisper_selected or st.session_state.whisper_loaded != True:
+        st.session_state.model, st.session_state.whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
         
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
-        alert = st.text(f"✅ Model Loaded: {whisper_selected}")
-    
-    with col1:
+        alert = st.text(f"✅ Model Loaded: {st.session_state.whisper_selected}")
+        ui_success = st.empty()
         st.divider()
-    
+
     # Get user input
     ## Select Input Mode
     with col2:
@@ -99,58 +101,50 @@ def main():
             ('Mic', 'File'),
             label_visibility='collapsed',
             horizontal=True
-        )     
-        st.empty() 
+        ) 
             
-    # Get User Input
-    with col2:
-        ## MIC or FILE
-        if input_type == 'Mic':
-            #  Render UI 🎙️
-            # st.header("Record Audio")
-            #  Setup User Mic Input
-            audio_data = setup_mic(col1, col2) 
-            
-        else:
-            #  Render UI
-            # st.header("📂 Upload Audio")
-            #  Setup User File Input
-            audio_data = setup_file(col1, col2)
-            
+        # Get User Input
+        with col2:
+            ## MIC or FILE
+            if input_type == 'Mic':
+                #  Render UI 🎙️
+                # st.header("Record Audio")
+                #  Setup User Mic Input
+                audio_data = setup_mic(col1, col2) 
+                print("transcribe_flag:", st.session_state.transcribe_flag)
+    
+            else:
+                #  Render UI
+                # st.header("📂 Upload Audio")
+                #  Setup User File Input
+                audio_data = setup_file(col1, col2)
+                print("transcribe_flag:", st.session_state.transcribe_flag)
 
-    # Transcribe audio file
-    if audio_data is not None and st.session_state.transcribe_flag:
-        
-        # Init transcription thread
-        transcription_thread = threading.Thread(
-            target=transcribe,
-            args=(audio_data, st.session_state.model, col1, col2)
-        )
-        transcription_thread.start()
-        
-        # Use stqdm progress bar to show transcription progress
-        with stqdm(total=100, desc="Transcribing", bar_format="{l_bar}{bar} [ETA: {remaining}]", ncols=100) as progress_bar:
-            for percent in range(100):
-                if not transcription_thread.is_alive():
-                    # If thread is running
-                    progress_bar.update(100 - progress_bar.n)  
-                    # Complete the progress bar if the model is downloaded
-                    break
-                progress_bar.update(1)
-                time.sleep(0.1)
-                
-        transcription_thread.join()
-        transcription = transcribe(audio_data, st.session_state.model, col1, col2)
-        
-        # Render UI
-        st.header("✍️ Transcription")
-        st.markdown(transcription["text"])
-        
-        st.session_state.transcribe_flag = False # Reset the flag
+    transcription_placeholder = st.empty()
+    
+    with col1:
+        if audio_data and st.button('Transcribe', use_container_width=True):
+            st.session_state.transcribe_flag = True
 
-    # Session State DEBUGGER
-    with st.expander("Session State", expanded=False):
-        st.session_state
+            # Reset the flag
+            st.session_state.transcribe_flag = False
+            print("transcribe_flag:", st.session_state.transcribe_flag)
+            feedback_transcribing = st.info("✍️ Transcribing...")
+            
+            transcription = transcribe(audio_data, st.session_state.model, col1, col2)
+            print("Transcribed!:", transcription["text"])
+            
+            # Render UI
+            feedback_transcribing.empty()
+            st.header("✍️ Transcription")
+            transcription_placeholder.markdown(transcription["text"])
+            ui_success.success(
+                    "Transcription Complete!",
+                    icon="🤩"
+                )
+            time.sleep(3.5)
+            ui_success.empty()
+
     
     # main() end # 
     ##############
@@ -159,36 +153,20 @@ def main():
 def model_exists(whisper_selected, device, models_path, col1, col2):
     if not whisper_selected:
         st.warning(f"Select a model! ⏫", icon="🚨")     
-    
+    ## Check if select model exists in models directory
     else:
-        ## Check if select model exists in models directory
         if not os.path.exists(whisper_file):
 
             with col1:
-                download_info = st.info(f"Downloading Whisper {whisper_selected} model...")
+                download_info = st.info(f"Loading Whisper {whisper_selected} model...")
                 
                 if whisper_selected:
                     # Init thread for download model
-                    download_thread = threading.Thread(
-                        target=download_model, 
-                        args=(whisper_selected, device, models_path)
+                    model = whisper.load_model(
+                        whisper_selected,
+                        device=device,
+                        download_root=models_path
                     )
-                    download_thread.start()
-                    
-                    # Use stqdm progress bar to show download  progress
-                    with stqdm(total=100, desc="Downloading", bar_format="{l_bar}{bar} [ETA: {remaining}]", ncols=100) as progress_bar:
-                        for percent in range(100):
-                            if not download_thread.is_alive():
-                                # If thread is running
-                                progress_bar.update(100 - progress_bar.n)  
-                                # Complete the progress bar if the model is downloaded
-                                break
-                            progress_bar.update(1)
-                            time.sleep(0.1)
-
-                    # Wait for the download thread to finish and get the model
-                    download_thread.join()
-                    model = download_model(whisper_selected, device, models_path)
                         
                     # show loaded model if selected
                     if model:
@@ -234,24 +212,6 @@ def setup_mic(col1, col2):
     # if Recorder is clicked
     if audio_bytes:  
         frames = []
-
-        # Render UI
-        print("Recording...")
-        rec_feedback = st.info("Recording...", icon="🔴")
-    
-        st.spinner('Wait for it...')
-            # time.sleep(5)
-            
-        # Render UI
-        rec_feedback.empty()
-        # progress.empty()
-        # Clear the progress bar when it's full
-        # progress_placeholder.empty()
-        
-        
-        # Read the binary content of the file
-        with open('output.wav', 'rb') as f:
-            file_content = f.read()
             
         # Open file from streamlit recorder
         with open("output.wav", "wb") as f:
@@ -265,31 +225,29 @@ def setup_mic(col1, col2):
         uploaded_file.id = len(uploaded_file.getvalue()) if st.session_state.audio_file is not None else 0
         uploaded_file.size = len(audio_bytes)
 
-        # # Convert BytesIO object to a file-like object
-        file_like_object = io.BytesIO(uploaded_file.getvalue())
-
         # # Create a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
             temp_file.write(uploaded_file.getvalue())
-            temp_file.flush()
+            temp_file.flush() 
 
-        #     # Load Recorded file to memory
+            # Load Recorded file to memory
             audio_data = whisper.load_audio(temp_file.name)
             audio_data = whisper.pad_or_trim(audio_data) 
 
-        # # Clean up temporary file
+        # Clean up temporary file
         os.unlink(temp_file.name)
         
         # # Update Session_State
         st.session_state.audio_file = uploaded_file
+        print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
         # Signal for transcription
         st.session_state.transcribe_flag = True
         
         if audio_data.size > 0:
             # Render Playback Audio File
             st.header("🎧 Recorded File")
-            st.audio(uploaded_file)
-
+            st.audio(st.session_state.audio_file)
+        
     return st.session_state.audio_file if st.session_state.audio_file else None
     
     
@@ -305,6 +263,8 @@ def setup_file(col1, col2):
             type=["wav", "mp3", "m4a"],
             label_visibility='collapsed'
         )
+        print("Loading file...")
+        
         
         # Signal for transcription
         st.session_state.transcribe_flag = True
@@ -316,30 +276,24 @@ def setup_file(col1, col2):
                 
     return audio_file
 
-
 # Transcribe Audio
+
 def transcribe(audio_file, model, col1, col2):
     transcription = {}
+    print("Transcribing...")
     
-    # if st.button("Transcribe!"):
     if audio_file is not None:
-        #  Render UI
-        # feedback = st.info("Transcribing...")
-        # audio_file.name == filePath
         transcription = model.transcribe(audio_file.name)
         print("audio_file id: ", audio_file.id)
         
-        with col1:
-            st.success(
-                    "Transcription Complete!",
-                    icon="🤩"
-                )
-        print("Transcribed!:", transcription["text"])
-    else:
-        st.error("Please input a valid audio file!")
-
-    return transcription
+    # Signal transcription done
+    st.session_state.transcribe_flag = False
     
+    return transcription
+
+
+def render_transcription(transcription):
+    st.markdown(transcription["text"])
 
 # Run
 if __name__ == "__main__":
