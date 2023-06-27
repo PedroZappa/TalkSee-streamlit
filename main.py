@@ -26,7 +26,6 @@ model_file = ''
 whisper_file = ''
 audio_file = None
 
-
 # Initialize Session State        
 if 'audio_file' not in st.session_state:
     st.session_state.audio_file = None
@@ -42,6 +41,7 @@ if 'model' not in st.session_state:
     
 if 'transcribe_flag' not in st.session_state:
     st.session_state.transcribe_flag = False
+    
 
 def main():
     audio_data = None
@@ -98,21 +98,28 @@ def main():
         st.header("Select Input Mode")
         input_type = st.radio(
             'Select Input Mode',
-            ('🎙️ Mic', '📂 File'),
+            ('Mic', 'File'),
             label_visibility='collapsed',
             horizontal=True
         ) 
             
         # Get User Input
-        if input_type == 'Mic':
-            #  Setup User Mic Input
-            audio_data = setup_mic(col1, col2) 
+        with col2:
+            ## MIC or FILE
+            if input_type == 'Mic':
+                #  Render UI 🎙️
+                # st.header("Record Audio")
+                #  Setup User Mic Input
+                audio_data = setup_mic(col1, col2) 
+                print("transcribe_flag:", st.session_state.transcribe_flag)
+    
+            else:
+                #  Render UI
+                # st.header("📂 Upload Audio")
+                #  Setup User File Input
+                audio_data = setup_file(col1, col2)
+                print("transcribe_flag:", st.session_state.transcribe_flag)
 
-        else:
-            #  Setup User File Input
-            audio_data = setup_file(col1, col2)
-
-    # Transcription
     transcription_placeholder = st.empty()
     
     with col1:
@@ -121,6 +128,7 @@ def main():
 
             # Reset the flag
             st.session_state.transcribe_flag = False
+            print("transcribe_flag:", st.session_state.transcribe_flag)
             feedback_transcribing = st.info("✍️ Transcribing...")
             
             transcription = transcribe(audio_data, st.session_state.model, col1, col2)
@@ -137,6 +145,7 @@ def main():
             time.sleep(3.5)
             ui_success.empty()
 
+    
     # main() end # 
     ##############
 
@@ -251,7 +260,6 @@ def setup_file(col1, col2):
                 
     return audio_file
 
-# Transcribe Audio
 
 def transcribe(audio_file, model, col1, col2):
     transcription = {}
