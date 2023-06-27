@@ -17,7 +17,7 @@ load_dotenv()
 # Setup Model Storage
 models_path = os.environ.get("MODELS_PATH")
 # enable write permission on models_path
-os.chmod(models_path, 0o775)
+os.chmod('models', 0o775)
 
 # Init vars
 model_file = ''
