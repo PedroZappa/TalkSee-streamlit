@@ -1,5 +1,5 @@
 python-dotenv
-os
+# os
 time
 io
 tempfile
