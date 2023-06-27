@@ -2,10 +2,8 @@ from dotenv import load_dotenv
 import os
 import time
 import io
-import asyncio
 from io import BytesIO
 import tempfile
-import threading
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
