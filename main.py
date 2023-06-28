@@ -14,18 +14,18 @@ import torch
 import whisper
 
 
-# Setup Model Storage
-models_path = os.environ.get("MODELS_PATH") if os.getenv('STREAMLIT_SHARING_MODE') != 's4a' else os.path.join(os.getcwd(), 'models')
+if st.secrets["MODELS_PATH"]:
+    models_path = st.secrets["MODELS_PATH"]
+else:
+    # Load env variables from .env file
+    load_dotenv()
+    # Setup Model Storage
+    models_path = os.environ.get("MODELS_PATH")
+    # enable write permission on models_path
+    os.chmod(models_path, 0o775)
 
 # DEBUG
 print("models_path:", models_path)
-
-# Load env variables from .env file
-load_dotenv()
-# Setup Model Storage
-models_path = os.environ.get("MODELS_PATH")
-# enable write permission on models_path
-os.chmod(models_path, 0o775)
 
 
 # Init vars
@@ -51,7 +51,7 @@ def main():
     audio_data = None
     transcription = dict()
     
-    st.write(st.__version__)
+    st.write("Streamlit", st.__version__)
     
     # Session State DEBUGGER
     with st.expander("Session State", expanded=False):
