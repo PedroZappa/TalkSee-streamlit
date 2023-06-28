@@ -7,7 +7,6 @@ import tempfile
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
-from stqdm import stqdm
 import torch
 import whisper
 
@@ -16,6 +15,11 @@ import whisper
 load_dotenv()
 # Setup Model Storage
 models_path = os.environ.get("MODELS_PATH")
+
+# Check if the directory exists
+if not os.path.exists('/models'):
+    # Create the directory if it doesn't exist
+    os.makedirs('/models')
 # enable write permission on models_path
 os.chmod('/models', 0o775)
 

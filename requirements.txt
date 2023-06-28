@@ -4,4 +4,3 @@ streamlit
 audio_recorder_streamlit
 torch
 whisper
-stqdm
