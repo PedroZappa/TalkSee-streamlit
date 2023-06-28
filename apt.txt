@@ -1,6 +1,0 @@
-streamlit
-audio_recorder_streamlit
-torch
-whisper
-openai-whisper
-ffmpeg

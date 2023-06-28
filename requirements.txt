@@ -1,6 +1,6 @@
-# streamlit
-# audio_recorder_streamlit
-# torch
+streamlit
+audio_recorder_streamlit
+torch
 # whisper
-# openai-whisper
-# ffmpeg
+openai-whisper
+ffmpeg
