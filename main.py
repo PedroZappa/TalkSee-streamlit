@@ -20,22 +20,12 @@ models_path = os.environ.get("MODELS_PATH") if os.getenv('STREAMLIT_SHARING_MODE
 # DEBUG
 print("models_path:", models_path)
 
-# Check if running on Streamlit Cloud or locally
-if os.getenv('STREAMLIT_SHARING_MODE') == 's4a':
-    print("Running on Streamlit Cloud")
-    # Check if the directory exists
-    if not os.path.exists(models_path):
-        # Create directory in the current working directory
-        dir_path = os.path.join(os.getcwd(), 'models')
-        os.makedirs(dir_path, exist_ok=True)      
-else:
-    print("Running locally")
-    # Load env variables from .env file
-    load_dotenv()
-    # Setup Model Storage
-    models_path = os.environ.get("MODELS_PATH")
-    # enable write permission on models_path
-    os.chmod(models_path, 0o775)
+# Load env variables from .env file
+load_dotenv()
+# Setup Model Storage
+models_path = os.environ.get("MODELS_PATH")
+# enable write permission on models_path
+os.chmod(models_path, 0o775)
 
 
 # Init vars
@@ -60,6 +50,8 @@ if 'model' not in st.session_state:
 def main():
     audio_data = None
     transcription = dict()
+    
+    st.write(st.__version__)
     
     # Session State DEBUGGER
     with st.expander("Session State", expanded=False):
