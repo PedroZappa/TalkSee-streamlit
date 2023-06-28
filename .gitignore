@@ -6,3 +6,4 @@
 # Ignore Audio Files
 Zedro.wav
 output.wav
+.streamlit/secrets.toml

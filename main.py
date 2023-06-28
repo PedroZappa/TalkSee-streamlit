@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import sys
 import os
 import time
@@ -14,15 +13,8 @@ import torch
 import whisper
 
 
-if st.secrets["MODELS_PATH"]:
-    models_path = st.secrets["MODELS_PATH"]
-else:
-    # Load env variables from .env file
-    load_dotenv()
-    # Setup Model Storage
-    models_path = os.environ.get("MODELS_PATH")
-    # enable write permission on models_path
-    os.chmod(models_path, 0o775)
+# Setup models storage path
+models_path = st.secrets["MODELS_PATH"]
 
 # DEBUG
 print("models_path:", models_path)
@@ -50,8 +42,6 @@ if 'model' not in st.session_state:
 def main():
     audio_data = None
     transcription = dict()
-    
-    st.write("Streamlit", st.__version__)
     
     # Session State DEBUGGER
     with st.expander("Session State", expanded=False):

@@ -1,5 +1,3 @@
-python-dotenv
-
 streamlit
 audio_recorder_streamlit
 torch
