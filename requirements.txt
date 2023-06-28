@@ -4,3 +4,4 @@ torch
 whisper
 openai-whisper
 ffmpeg
+ffmpeg-python
