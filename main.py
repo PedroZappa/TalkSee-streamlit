@@ -30,10 +30,14 @@ else:
     models_path = os.environ.get("MODELS_PATH")
     # enable write permission on models_path
     os.chmod(models_path, 0o775)
+    
+# DEBUG
+# Check for streamlit sharing mode
+print(os.getenv('STREAMLIT_SHARING_MODE'))
 
 # Init vars
 model_file = ''
-whisper_file = ''
+whisper_file = '' 
 audio_file = None
 
 # Initialize Session State        
@@ -48,9 +52,6 @@ if 'whisper_loaded' not in st.session_state:
     
 if 'model' not in st.session_state:
     st.session_state.model = None
-    
-if 'transcribe_flag' not in st.session_state:
-    st.session_state.transcribe_flag = False
     
 
 def main():
@@ -120,25 +121,18 @@ def main():
                 #  Render UI 🎙️
                 # st.header("Record Audio")
                 #  Setup User Mic Input
-                audio_data = setup_mic(col1, col2) 
-                print("transcribe_flag:", st.session_state.transcribe_flag)
+                audio_data = setup_mic(col1, col2)
     
             else:
                 #  Render UI
                 # st.header("📂 Upload Audio")
                 #  Setup User File Input
                 audio_data = setup_file(col1, col2)
-                print("transcribe_flag:", st.session_state.transcribe_flag)
 
     transcription_placeholder = st.empty()
     
     with col1:
         if audio_data and st.button('Transcribe', use_container_width=True):
-            st.session_state.transcribe_flag = True
-
-            # Reset the flag
-            st.session_state.transcribe_flag = False
-            print("transcribe_flag:", st.session_state.transcribe_flag)
             feedback_transcribing = st.info("✍️ Transcribing...")
             
             transcription = transcribe(audio_data, st.session_state.model, col1, col2)
@@ -234,8 +228,6 @@ def setup_mic(col1, col2):
         # # Update Session_State
         st.session_state.audio_file = uploaded_file
         print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
-        # Signal for transcription
-        st.session_state.transcribe_flag = True
         
         if audio_data.size > 0:
             # Render Playback Audio File
@@ -259,10 +251,6 @@ def setup_file(col1, col2):
         )
         print("Loading file...")
         
-        
-        # Signal for transcription
-        st.session_state.transcribe_flag = True
-        
         if audio_file:
             # Render Playback Audio File
             st.header("🎧 Uploaded File")
@@ -278,9 +266,6 @@ def transcribe(audio_file, model, col1, col2):
     if audio_file is not None:
         transcription = model.transcribe(audio_file.name)
         print("audio_file id: ", audio_file.id)
-        
-    # Signal transcription done
-    st.session_state.transcribe_flag = False
     
     return transcription
 
