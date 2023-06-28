@@ -1,8 +1,4 @@
 python-dotenv
-# os
-# time
-# io
-# tempfile
 
 streamlit
 audio_recorder_streamlit
