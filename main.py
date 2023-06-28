@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import sys
 import os
 import time
 import io
@@ -6,22 +7,29 @@ from io import BytesIO
 import tempfile
 
 import streamlit as st
+from streamlit.web import cli as stcli
+from streamlit import runtime
 from audio_recorder_streamlit import audio_recorder
 import torch
 import whisper
 
 
-# Load env variables from .env file
-load_dotenv()
-# Setup Model Storage
-models_path = os.environ.get("MODELS_PATH")
-
-# Check if the directory exists
-if not os.path.exists('/models'):
-    # Create the directory if it doesn't exist
-    os.makedirs('/models')
-# enable write permission on models_path
-os.chmod('/models', 0o775)
+# Check if running on Streamlit Cloud or locally
+if os.getenv('STREAMLIT_SHARING_MODE') == 's4a':
+    print("Running on Streamlit Cloud")
+    # Check if the directory exists
+    if not os.path.exists(models_path):
+        # Create directory in the current working directory
+        dir_path = os.path.join(os.getcwd(), 'models')
+        os.makedirs(dir_path, exist_ok=True)      
+else:
+    print("Running locally")
+    # Load env variables from .env file
+    load_dotenv()
+    # Setup Model Storage
+    models_path = os.environ.get("MODELS_PATH")
+    # enable write permission on models_path
+    os.chmod(models_path, 0o775)
 
 # Init vars
 model_file = ''
