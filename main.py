@@ -251,7 +251,7 @@ def setup_file(col1, col2):
                 
             # Render Playback Audio File
             st.header("🎧 Uploaded File")
-            st.audio(uploaded_file.name)
+            st.audio(uploaded_file)
             print("setup_file() audio_file:", uploaded_file.name)
             print(uploaded_file)
             
