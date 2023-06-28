@@ -14,6 +14,12 @@ import torch
 import whisper
 
 
+# Setup Model Storage
+models_path = os.environ.get("MODELS_PATH") if os.getenv('STREAMLIT_SHARING_MODE') != 's4a' else os.path.join(os.getcwd(), 'models')
+
+# DEBUG
+print("models_path:", models_path)
+
 # Check if running on Streamlit Cloud or locally
 if os.getenv('STREAMLIT_SHARING_MODE') == 's4a':
     print("Running on Streamlit Cloud")
@@ -30,10 +36,7 @@ else:
     models_path = os.environ.get("MODELS_PATH")
     # enable write permission on models_path
     os.chmod(models_path, 0o775)
-    
-# DEBUG
-# Check for streamlit sharing mode
-print(os.getenv('STREAMLIT_SHARING_MODE'))
+
 
 # Init vars
 model_file = ''
