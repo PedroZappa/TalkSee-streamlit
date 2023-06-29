@@ -110,10 +110,11 @@ def main():
                 #  Setup User File Input
                 audio_data = setup_file(col1, col2)
 
+    # Setup UI
     transcription_placeholder = st.empty()
     
     with col1:
-        if audio_data and st.button('Transcribe', use_container_width=True):
+        if audio_data is not None and st.button('Transcribe', use_container_width=True):
             feedback_transcribing = st.info("✍️ Transcribing...")
             
             transcription = transcribe(audio_data, st.session_state.model, col1, col2)
