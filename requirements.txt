@@ -1,7 +1,7 @@
 streamlit
 audio_recorder_streamlit
 torch
-# whisper
+whisper
 openai-whisper
 ffmpeg
 setuptools-rust
