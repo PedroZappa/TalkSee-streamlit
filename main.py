@@ -230,7 +230,6 @@ def setup_file(col1, col2):
             label_visibility='collapsed'
         )
         print("Loading file...")
-        print("uploaded_file:", uploaded_file)
         
         if uploaded_file:
             # Get bytes data from uploaded_file
@@ -245,15 +244,15 @@ def setup_file(col1, col2):
             # uploaded_file.id = len(audio_bytes) if st.session_state.audio_file is not None else 0
             
             # Create a temporary file
-            # with tempfile.NamedTemporaryFile(delete=False, suffix="." + uploaded_file.type.split("/")[-1]) as temp_file:
-            #     temp_file.write(audio_bytes)
-            #     temp_file.flush() 
+            with tempfile.NamedTemporaryFile(delete=False) as temp:
+                temp.write(uploaded_file.read())
+                temp_file = temp.name
                 
-            # Render Playback Audio File
-            st.header("🎧 Uploaded File")
-            st.audio(uploaded_file)
-            print("setup_file() audio_file:", uploaded_file.name)
-            print(uploaded_file)
+                # Render Playback Audio File
+                st.header("🎧 Uploaded File")
+                st.audio(uploaded_file)
+                print("setup_file() audio_file:")
+                print(uploaded_file)
             
             # Clean up temporary file
             # os.unlink(temp_file.name)
@@ -263,7 +262,7 @@ def setup_file(col1, col2):
 
 def transcribe(audio_file, model, col1, col2):
     transcription = {}
-    print("Transcribing...")
+    print("Transcribing...", audio_file)
     
     if audio_file is not None:
         transcription = model.transcribe(audio_file.name)
