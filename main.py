@@ -41,10 +41,6 @@ def main():
     audio_data = None
     transcription = dict()
     
-    # Session State DEBUGGER
-    with st.expander("Session State", expanded=False):
-        st.session_state
-    
     # Check if CUDA is available
     torch.cuda.is_available()
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -136,7 +132,10 @@ def main():
             time.sleep(3.5)
             transcription_success.empty()
 
-    
+    # Session State DEBUGGER
+    with st.expander("Session State", expanded=False):
+        st.session_state
+        
     # main() end # 
     ##############
 
@@ -236,12 +235,16 @@ def setup_file(col1, col2):
             type=["wav", "mp3", "m4a"],
             label_visibility='collapsed'
         )
-        print("Loading file...")
+        print("Loading file...", uploaded_file)
         
         if uploaded_file:
             # Load Recorded file to memory
             audio_data = whisper.load_audio(uploaded_file.name)
             audio_data = whisper.pad_or_trim(audio_data) 
+            
+            # Update Session_State
+            st.session_state.audio_file = uploaded_file
+            print("setup_file() session_state.audio_file:", st.session_state.audio_file)
             
             file_path = save_uploaded_file(uploaded_file)
             
@@ -249,10 +252,11 @@ def setup_file(col1, col2):
             # if audio_data.size > 0:
                 # Render Playback Audio File
                 st.header("🎧 Uploaded File")
-                st.audio(audio_data)
-                print("setup_file() temp file_path:", audio_data)
+                st.audio(st.session_state.audio_file)
+                print("setup_file() temp file_path:", file_path)
+                print("setup_file() session_state.audio_file:", st.session_state.audio_file)
                 
-    return file_path if file_path else None
+    return st.session_state.audio_file if st.session_state.audio_file else None
 
 
 def save_uploaded_file(uploaded_file):
