@@ -6,8 +6,6 @@ from io import BytesIO
 import tempfile
 
 import streamlit as st
-from streamlit.web import cli as stcli
-from streamlit import runtime
 from audio_recorder_streamlit import audio_recorder
 import torch
 import whisper
@@ -180,7 +178,7 @@ def setup_mic(col1, col2):
     )
     
     # if Recorder is clicked
-    if audio_bytes:
+    if audio_bytes is not None:
         # Open file from streamlit recorder
         with open("output.wav", "wb") as f:
             f.write(audio_bytes)
@@ -205,6 +203,7 @@ def setup_mic(col1, col2):
 
             # Clean up temporary file
             os.unlink(temp_file.name)
+    
         
         # # Update Session_State
         st.session_state.audio_file = uploaded_file
