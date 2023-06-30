@@ -1,6 +1,6 @@
 import logging
 import logging.handlers
-import sys, os, time, io, queue, av
+import sys, os, time, io, queue
 from io import BytesIO
 from pathlib import Path
 
@@ -267,9 +267,6 @@ def setup_mic():
 #         # Reset
 #         st.session_state["audio_buffer"] = pydub.AudioSegment.empty()
     
-    
-    
-
 #     # Create a BytesIO object
 #     recorded_file = BytesIO(audio_buffer)
 #     recorded_file.name = 'output.wav'
@@ -287,7 +284,6 @@ def setup_mic():
 #         st.audio(st.session_state.audio_file)
 
 #     return st.session_state.audio_file if st.session_state.audio_file else None
-
   
 
 def setup_file(col2):
