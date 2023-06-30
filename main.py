@@ -1,9 +1,5 @@
-import sys
-import os
-import time
-import io
+import sys, os, time, io
 from io import BytesIO
-import tempfile
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
@@ -188,7 +184,6 @@ def setup_mic(col1, col2):
         # Open file from streamlit recorder
         with open("output.wav", "wb") as f:
             f.write(audio_bytes)
-        # st.audio(audio_bytes, format="audio/wav")
 
         # Create a BytesIO object
         uploaded_file = BytesIO(audio_bytes)
@@ -196,26 +191,12 @@ def setup_mic(col1, col2):
         uploaded_file.type = 'audio/wav'
         uploaded_file.id = len(uploaded_file.getvalue()) if st.session_state.audio_file is not None else 0
         uploaded_file.size = len(audio_bytes)
-
-        # Create a temporary file
-        if uploaded_file:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-                temp_file.write(uploaded_file.getvalue())
-                temp_file.flush() 
-
-                # Load Recorded file to memory
-                audio_data = whisper.load_audio(temp_file.name)
-                audio_data = whisper.pad_or_trim(audio_data) 
-
-            # Clean up temporary file
-            os.unlink(temp_file.name)
     
-        
         # Update Session_State
         st.session_state.audio_file = uploaded_file
         print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
         
-        if audio_data.size > 0:
+        if uploaded_file:
             # Render Playback Audio File
             st.header("🎧 Recorded File")
             st.audio(st.session_state.audio_file)
@@ -238,38 +219,16 @@ def setup_file(col1, col2):
         print("Loading file...", uploaded_file)
         
         if uploaded_file:
-            # Load Recorded file to memory
-            audio_data = whisper.load_audio(uploaded_file.name)
-            audio_data = whisper.pad_or_trim(audio_data) 
-            
             # Update Session_State
             st.session_state.audio_file = uploaded_file
             print("setup_file() session_state.audio_file:", st.session_state.audio_file)
             
-            file_path = save_uploaded_file(uploaded_file)
-            
-            if file_path:
-            # if audio_data.size > 0:
-                # Render Playback Audio File
-                st.header("🎧 Uploaded File")
-                st.audio(st.session_state.audio_file)
-                print("setup_file() temp file_path:", file_path)
-                print("setup_file() session_state.audio_file:", st.session_state.audio_file)
+            # Render Playback Audio File
+            st.header("🎧 Uploaded File")
+            st.audio(st.session_state.audio_file)
+            print("setup_file() session_state.audio_file:", st.session_state.audio_file)
                 
     return st.session_state.audio_file if st.session_state.audio_file else None
-
-
-def save_uploaded_file(uploaded_file):
-    # Ensure the temp directory exists
-    if not os.path.exists('temp'):
-        os.makedirs('temp')
-        
-    file_path = os.path.join("temp", uploaded_file.name)
-    # Save uploaded file to tempDir
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getvalue())
-        
-    return file_path
 
 
 def transcribe(audio_file, model, col1, col2):
