@@ -2,7 +2,7 @@ import sys
 import os
 import time
 import io
-from io import BytesIO, StringIO
+from io import BytesIO
 import tempfile
 
 import streamlit as st
@@ -232,36 +232,28 @@ def setup_file(col1, col2):
         )
         print("Loading file...")
         
-        if uploaded_file is not None:
-            # Read uploaded_file as bytes
-            audio_bytes = uploaded_file.getvalue()
+        if uploaded_file:
+            file_details = {
+                "file_name": uploaded_file.name, 
+                "file_type": uploaded_file.type
+            }
+            save_uploaded_file(uploaded_file)
             print("uploaded_file:", uploaded_file)
+       
             
-            # Convert to a string based IO:
-            # stringio = StringIO
-            
-            # Open file from streamlit recorder
-            # with open("uploaded_file.wav", "wb") as f:
-            #     f.write(audio_bytes)
-            
-            # uploaded_file.name = 'uploaded_file.wav'
-            # uploaded_file.type = 'audio/wav'
-            # uploaded_file.id = len(audio_bytes) if st.session_state.audio_file is not None else 0
-            
-            # Create a temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp:
-                temp.write(uploaded_file.read())
-                temp_file = temp.name
-                
-                # Render Playback Audio File
-                st.header("🎧 Uploaded File")
-                st.audio(temp_file)
-                print("setup_file() temp audio_file:", temp_file)
-            
-            # Clean up temporary file
-            # os.unlink(temp_file.name)
+            # Render Playback Audio File
+            st.header("🎧 Uploaded File")
+            st.audio(uploaded_file)
+            print("setup_file() temp audio_file:", uploaded_file)
                 
     return uploaded_file if uploaded_file else None
+
+
+def save_uploaded_file(uploaded_file):
+    # Save uploaded file to tempDir
+    with open(os.path.join("temp", uploaded_file.name), "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return st.success("File Saved: {} in temp".format(uploaded_file.name))
 
 
 def transcribe(audio_file, model, col1, col2):
