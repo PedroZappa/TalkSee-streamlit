@@ -212,7 +212,7 @@ def setup_mic(col1, col2):
             os.unlink(temp_file.name)
     
         
-        # # Update Session_State
+        # Update Session_State
         st.session_state.audio_file = uploaded_file
         print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
         
@@ -246,7 +246,7 @@ def setup_file(col1, col2):
             st.audio(file_path)
             print("setup_file() temp file_path:", file_path)
                 
-    return file_path if file_path else None
+    return uploaded_file if uploaded_file else None
 
 
 def save_uploaded_file(uploaded_file):
@@ -258,7 +258,7 @@ def save_uploaded_file(uploaded_file):
     # Save uploaded file to tempDir
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getvalue())
-
+        
     return file_path
 
 
