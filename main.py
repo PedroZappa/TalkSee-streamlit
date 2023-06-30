@@ -207,6 +207,10 @@ def setup_file(col2):
         print("Loading file...", uploaded_file)
         
         if uploaded_file:
+            # Write the uploaded file to disk
+            with open(audio_file.name, "wb") as f:
+                f.write(audio_file.getvalue())
+            
             # Update Session_State
             st.session_state.audio_file = uploaded_file
             print("setup_file() session_state.audio_file:", st.session_state.audio_file)
@@ -224,6 +228,9 @@ def transcribe(audio_file, _model):
     print("Transcribing...", audio_file)
     
     if audio_file is not None:
+        
+            
+        # Transcribe audio file
         transcription = _model.transcribe(audio_file.name)
         print("audio_file id: ", audio_file.id)
     else:
