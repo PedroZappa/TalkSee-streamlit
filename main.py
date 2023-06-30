@@ -73,6 +73,7 @@ def main():
         st.session_state.model, st.session_state.whisper_selected = model_exists(whisper_select, DEVICE, models_path, col1, col2)
         
     with col1:
+        # Render UI
         st.text(f"✅ Torch Status: {DEVICE}")
         alert = st.text(f"✅ Model Loaded: {st.session_state.whisper_selected}")
         upload_status = st.empty()
