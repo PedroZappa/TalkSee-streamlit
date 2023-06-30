@@ -158,9 +158,6 @@ def model_exists(whisper_selected, device, models_path, _col1, _col2):
 
 
 def setup_mic():
-    global audio_file
-    audio_data = None
-        
     # Init Streamlit Audio Recorder
     audio_bytes = audio_recorder(
         text='',
@@ -173,23 +170,23 @@ def setup_mic():
     )
     
     # if Recorder is clicked
-    if audio_bytes is not None:
+    if audio_bytes:
         # Open file from streamlit recorder
         with open("output.wav", "wb") as f:
             f.write(audio_bytes)
 
         # Create a BytesIO object
-        uploaded_file = BytesIO(audio_bytes)
-        uploaded_file.name = 'output.wav'
-        uploaded_file.type = 'audio/wav'
-        uploaded_file.id = len(uploaded_file.getvalue()) if st.session_state.audio_file is not None else 0
-        uploaded_file.size = len(audio_bytes)
+        recorded_file = BytesIO(audio_bytes)
+        recorded_file.name = 'output.wav'
+        recorded_file.type = 'audio/wav'
+        recorded_file.id = len(recorded_file.getvalue()) if st.session_state.audio_file is not None else 0
+        recorded_file.size = len(audio_bytes)
     
         # Update Session_State
-        st.session_state.audio_file = uploaded_file
+        st.session_state.audio_file = recorded_file
         print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
         
-        if uploaded_file:
+        if recorded_file:
             # Render Playback Audio File
             st.header("🎧 Recorded File")
             st.audio(st.session_state.audio_file)
@@ -197,10 +194,7 @@ def setup_mic():
     return st.session_state.audio_file if st.session_state.audio_file else None
     
 
-# @st.cache_data 
 def setup_file(col2):
-    global audio_file
-    
     with col2:
         ## Upload Pre-Recorded Audio file
         uploaded_file = st.file_uploader(
@@ -218,14 +212,8 @@ def setup_file(col2):
             print("setup_file() session_state.audio_file:", st.session_state.audio_file)
             
             # Render Playback Audio File
-            upload_status = st.empty()
             st.header("🎧 Uploaded File")
             st.audio(st.session_state.audio_file)
-            print("setup_file() session_state.audio_file:", st.session_state.audio_file)
-            
-            upload_status.success(f"File Saved: {st.session_state.audio_file.name}")
-            time.sleep(1.5)
-            upload_status.empty()
                 
     return st.session_state.audio_file if st.session_state.audio_file else None
 
