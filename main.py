@@ -226,6 +226,8 @@ def transcribe(audio_file, _model):
     if audio_file is not None:
         transcription = _model.transcribe(audio_file.name)
         print("audio_file id: ", audio_file.id)
+    else:
+        print("Upload a valid audio file")
     
     return transcription
 
