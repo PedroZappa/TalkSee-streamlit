@@ -246,7 +246,7 @@ def setup_file(col1, col2):
             st.audio(file_path)
             print("setup_file() temp file_path:", file_path)
                 
-    return uploaded_file if uploaded_file else None
+    return file_path if file_path else None
 
 
 def save_uploaded_file(uploaded_file):
