@@ -231,7 +231,7 @@ def setup_file(col1, col2):
         ## Upload Pre-Recorded Audio file
         uploaded_file = st.file_uploader(
             "Upload Audio File", 
-            key="audio_file",
+            key="uploaded_audio_file",
             # Supported file types
             type=["wav", "mp3", "m4a"],
             label_visibility='collapsed'
