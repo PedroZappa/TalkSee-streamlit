@@ -83,8 +83,9 @@ def main():
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
         alert = st.text(f"✅ Model Loaded: {st.session_state.whisper_selected}")
+        upload_success = st.empty()
         feedback_transcribing = st.empty()
-        ui_success = st.empty()
+        transcription_success = st.empty()
         st.divider()
 
     # Get user input
@@ -108,6 +109,11 @@ def main():
             else:
                 #  Setup User File Input
                 audio_data = setup_file(col1, col2)
+                
+                if audio_data:
+                    upload_success.success(f"File Saved: temp/{audio_data.name}")
+                    time.sleep(2)
+                    upload_success.empty()
 
     # Setup UI
     transcription_placeholder = st.empty()
@@ -123,12 +129,12 @@ def main():
             feedback_transcribing.empty()
             st.header("✍️ Transcription")
             transcription_placeholder.markdown(transcription["text"])
-            ui_success.success(
+            transcription_success.success(
                     "Transcription Complete!",
                     icon="🤩"
                 )
             time.sleep(3.5)
-            ui_success.empty()
+            transcription_success.empty()
 
     
     # main() end # 
@@ -233,27 +239,27 @@ def setup_file(col1, col2):
         print("Loading file...")
         
         if uploaded_file:
-            file_details = {
-                "file_name": uploaded_file.name, 
-                "file_type": uploaded_file.type
-            }
-            save_uploaded_file(uploaded_file)
-            print("uploaded_file:", uploaded_file)
-       
+            file_path = save_uploaded_file(uploaded_file)
             
             # Render Playback Audio File
             st.header("🎧 Uploaded File")
-            st.audio(uploaded_file)
-            print("setup_file() temp audio_file:", uploaded_file)
+            st.audio(file_path)
+            print("setup_file() temp file_path:", file_path)
                 
     return uploaded_file if uploaded_file else None
 
 
 def save_uploaded_file(uploaded_file):
+    # Ensure the temp directory exists
+    if not os.path.exists('temp'):
+        os.makedirs('temp')
+        
+    file_path = os.path.join("temp", uploaded_file.name)
     # Save uploaded file to tempDir
-    with open(os.path.join("temp", uploaded_file.name), "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    return st.success("File Saved: {} in temp".format(uploaded_file.name))
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getvalue())
+
+    return file_path
 
 
 def transcribe(audio_file, model, col1, col2):
