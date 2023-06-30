@@ -171,5 +171,5 @@ ___
 
 ## TODO -->
 
-- fix model loading
-- loading model UI
+- mobile issues
+    - ask browser for mic permission
