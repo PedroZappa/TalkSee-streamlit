@@ -241,10 +241,15 @@ def setup_file(col1, col2):
         if uploaded_file:
             file_path = save_uploaded_file(uploaded_file)
             
-            # Render Playback Audio File
-            st.header("🎧 Uploaded File")
-            st.audio(file_path)
-            print("setup_file() temp file_path:", file_path)
+            # Load Recorded file to memory
+            audio_data = whisper.load_audio(uploaded_file.name)
+            audio_data = whisper.pad_or_trim(audio_data) 
+            
+            if audio_data.size > 0:
+                # Render Playback Audio File
+                st.header("🎧 Uploaded File")
+                st.audio(file_path)
+                print("setup_file() temp file_path:", file_path)
                 
     return uploaded_file if uploaded_file else None
 
