@@ -2,7 +2,7 @@ import sys
 import os
 import time
 import io
-from io import BytesIO
+from io import BytesIO, StringIO
 import tempfile
 
 import streamlit as st
@@ -83,6 +83,7 @@ def main():
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
         alert = st.text(f"✅ Model Loaded: {st.session_state.whisper_selected}")
+        feedback_transcribing = st.empty()
         ui_success = st.empty()
         st.divider()
 
@@ -113,7 +114,7 @@ def main():
     
     with col1:
         if audio_data is not None and st.button('Transcribe', use_container_width=True):
-            feedback_transcribing = st.info("✍️ Transcribing...")
+            feedback_transcribing.info("✍️ Transcribing...")
             
             transcription = transcribe(audio_data, st.session_state.model, col1, col2)
             print("Transcribed!:", transcription["text"])
@@ -231,9 +232,13 @@ def setup_file(col1, col2):
         )
         print("Loading file...")
         
-        if uploaded_file:
-            # Get bytes data from uploaded_file
-            # audio_bytes = uploaded_file.getvalue()
+        if uploaded_file is not None:
+            # Read uploaded_file as bytes
+            audio_bytes = uploaded_file.getvalue()
+            print("uploaded_file:", uploaded_file)
+            
+            # Convert to a string based IO:
+            # stringio = StringIO
             
             # Open file from streamlit recorder
             # with open("uploaded_file.wav", "wb") as f:
@@ -244,15 +249,14 @@ def setup_file(col1, col2):
             # uploaded_file.id = len(audio_bytes) if st.session_state.audio_file is not None else 0
             
             # Create a temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as temp:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp:
                 temp.write(uploaded_file.read())
                 temp_file = temp.name
                 
                 # Render Playback Audio File
                 st.header("🎧 Uploaded File")
-                st.audio(uploaded_file)
-                print("setup_file() audio_file:")
-                print(uploaded_file)
+                st.audio(temp_file)
+                print("setup_file() temp audio_file:", temp_file)
             
             # Clean up temporary file
             # os.unlink(temp_file.name)
