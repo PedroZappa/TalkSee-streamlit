@@ -208,8 +208,8 @@ def setup_file(col2):
         
         if uploaded_file:
             # Write the uploaded file to disk
-            with open(audio_file.name, "wb") as f:
-                f.write(audio_file.getvalue())
+            with open(uploaded_file.name, "wb") as f:
+                f.write(uploaded_file.getvalue())
             
             # Update Session_State
             st.session_state.audio_file = uploaded_file
