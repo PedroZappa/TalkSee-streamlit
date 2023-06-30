@@ -10,10 +10,6 @@ import whisper
 # Setup models storage path
 models_path = st.secrets["MODELS_PATH"]
 
-# DEBUG
-print("models_path:", models_path)
-
-
 # Init vars
 model_file = ''
 whisper_file = '' 
@@ -76,7 +72,6 @@ def main():
         # Render UI
         st.text(f"✅ Torch Status: {DEVICE}")
         alert = st.text(f"✅ Model Loaded: {st.session_state.whisper_selected}")
-        upload_status = st.empty()
         feedback_transcribing = st.empty()
         transcription_success = st.empty()
         st.divider()
@@ -97,16 +92,12 @@ def main():
             ## MIC or FILE
             if input_type == 'Mic':
                 #  Setup User Mic Input
-                audio_data = setup_mic(col1, col2)
+                audio_data = setup_mic()
     
             else:
                 #  Setup User File Input
-                audio_data = setup_file(col1, col2)
-                
-                if audio_data:
-                    upload_status.success(f"File Saved: temp/{audio_data.name}")
-                    time.sleep(1.5)
-                    upload_status.empty()
+                audio_data = setup_file(col2)
+        
 
     # Setup UI
     transcription_placeholder = st.empty()
@@ -115,7 +106,7 @@ def main():
         if audio_data is not None and st.button('Transcribe', use_container_width=True):
             feedback_transcribing.info("✍️ Transcribing...")
             
-            transcription = transcribe(audio_data, st.session_state.model, col1, col2)
+            transcription = transcribe(audio_data, st.session_state.model)
             print("Transcribed!:", transcription["text"])
             
             # Render UI
@@ -137,14 +128,15 @@ def main():
     ##############
 
 
-def model_exists(whisper_selected, device, models_path, col1, col2):
+@st.cache_resource
+def model_exists(whisper_selected, device, models_path, _col1, _col2):
     if not whisper_selected:
         st.warning(f"Select a model! ⏫", icon="🚨")     
     ## Check if select model exists in models directory
     else:
         if not os.path.exists(whisper_file):
 
-            with col1:
+            with _col1:
                 download_info = st.spinner(f"Loading Whisper {whisper_selected} model...")
                 
                 if whisper_selected:
@@ -165,7 +157,7 @@ def model_exists(whisper_selected, device, models_path, col1, col2):
     return model, whisper_selected
 
 
-def setup_mic(col1, col2):
+def setup_mic():
     global audio_file
     audio_data = None
         
@@ -204,8 +196,9 @@ def setup_mic(col1, col2):
         
     return st.session_state.audio_file if st.session_state.audio_file else None
     
-    
-def setup_file(col1, col2):
+
+# @st.cache_data 
+def setup_file(col2):
     global audio_file
     
     with col2:
@@ -225,19 +218,25 @@ def setup_file(col1, col2):
             print("setup_file() session_state.audio_file:", st.session_state.audio_file)
             
             # Render Playback Audio File
+            upload_status = st.empty()
             st.header("🎧 Uploaded File")
             st.audio(st.session_state.audio_file)
             print("setup_file() session_state.audio_file:", st.session_state.audio_file)
+            
+            upload_status.success(f"File Saved: {st.session_state.audio_file.name}")
+            time.sleep(1.5)
+            upload_status.empty()
                 
     return st.session_state.audio_file if st.session_state.audio_file else None
 
 
-def transcribe(audio_file, model, col1, col2):
+@st.cache_data
+def transcribe(audio_file, _model):
     transcription = {}
     print("Transcribing...", audio_file)
     
     if audio_file is not None:
-        transcription = model.transcribe(audio_file.name)
+        transcription = _model.transcribe(audio_file.name)
         print("audio_file id: ", audio_file.id)
     
     return transcription
