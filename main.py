@@ -83,7 +83,7 @@ def main():
     with col1:
         st.text(f"✅ Torch Status: {DEVICE}")
         alert = st.text(f"✅ Model Loaded: {st.session_state.whisper_selected}")
-        upload_success = st.empty()
+        upload_status = st.empty()
         feedback_transcribing = st.empty()
         transcription_success = st.empty()
         st.divider()
@@ -111,9 +111,9 @@ def main():
                 audio_data = setup_file(col1, col2)
                 
                 if audio_data:
-                    upload_success.success(f"File Saved: temp/{audio_data.name}")
-                    time.sleep(2)
-                    upload_success.empty()
+                    upload_status.success(f"File Saved: temp/{audio_data.name}")
+                    time.sleep(1.5)
+                    upload_status.empty()
 
     # Setup UI
     transcription_placeholder = st.empty()
@@ -239,19 +239,20 @@ def setup_file(col1, col2):
         print("Loading file...")
         
         if uploaded_file:
-            file_path = save_uploaded_file(uploaded_file)
-            
             # Load Recorded file to memory
             audio_data = whisper.load_audio(uploaded_file.name)
             audio_data = whisper.pad_or_trim(audio_data) 
             
-            if audio_data.size > 0:
+            file_path = save_uploaded_file(uploaded_file)
+            
+            if file_path:
+            # if audio_data.size > 0:
                 # Render Playback Audio File
                 st.header("🎧 Uploaded File")
                 st.audio(audio_data)
                 print("setup_file() temp file_path:", audio_data)
                 
-    return audio_data if audio_data else None
+    return file_path if file_path else None
 
 
 def save_uploaded_file(uploaded_file):
