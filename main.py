@@ -1,20 +1,13 @@
-import logging
-import logging.handlers
-import sys, os, time, io, queue
+import sys, os, time, io
 from io import BytesIO
 from pathlib import Path
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
-from streamlit_webrtc import WebRtcMode, webrtc_streamer, ClientSettings
-from twilio.rest import Client
-import pydub
+
 import torch
 import whisper
 
-HERE = Path(__file__).parent
-
-logger = logging.getLogger(__name__)
 
 # Setup models storage path
 models_path = st.secrets["MODELS_PATH"]
@@ -201,90 +194,7 @@ def setup_mic():
             st.audio(st.session_state.audio_file)
         
     return st.session_state.audio_file if st.session_state.audio_file else None
-  
-  
-# def setup_mic():
-#     webrtc_ctx = webrtc_streamer(
-#         key="sendonly-audio",
-#         mode=WebRtcMode.SENDONLY,
-#         audio_receiver_size=256,
-#         rtc_configuration={"iceServers": get_ice_servers()},
-#         media_stream_constraints={
-#             "video": False, 
-#             "audio": True
-#         },
-#     )
-    
-#     status_indicator = st.empty()
-    
-#     if not webrtc_ctx.state.playing:
-#         return
-    
-#     status_indicator.write("Loading...")
-#     text_output = st.empty()
-#     # stream = None
-    
-#     # session_state audio_buffer
-#     if "audio_buffer" not in st.session_state:
-#         st.session_state["audio_buffer"] = pydub.AudioSegment.empty()
-    
-#     # Record Audio
-#     while True:
-#         sound_chunk = pydub.AudioSegment.empty()
-        
-#         if webrtc_ctx.audio_receiver:
-#             try:
-#                 audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=1)
-#             except queue.Empty:
-#                 time.sleep(0.1)
-#                 status_indicator.write("No frame arrived.")
-#                 continue
-            
-#             status_indicator.write("Running... Talk and See!")
-            
-#             for audio_frame in audio_frames:
-#                 sound = pydub.AudioSegment(
-#                     data=audio_frame.to_ndarray().tobytes(),
-#                     sample_width=audio_frame.format.bytes,
-#                     frame_rate=audio_frame.sample_rate,
-#                     channels=len(audio_frame.layout.channels),
-#                 )
-#                 sound_chunk += sound
-    
-#         else:
-#             status_indicator.write("AudioReceiver is not set. Abort.")
-#             break
-        
-#     audio_buffer = st.session_state["audio_buffer"]
-#     print("audio_buffer", audio_buffer)
-    
-#     if not webrtc_ctx.state.playing and len(audio_buffer) > 0:
-#         st.info("Writing wav to disk")
-#         # Open file from streamlit recorder
-#         with open("output.wav", "wb") as f:
-#             f.write(audio_buffer)
-#         # audio_buffer.export("temp.wav", format="wav")
-#         # Reset
-#         st.session_state["audio_buffer"] = pydub.AudioSegment.empty()
-    
-#     # Create a BytesIO object
-#     recorded_file = BytesIO(audio_buffer)
-#     recorded_file.name = 'output.wav'
-#     recorded_file.type = 'audio/wav'
-#     recorded_file.id = len(recorded_file.getvalue()) if st.session_state.audio_file is not None else 0
-#     recorded_file.size = len(audio_buffer)
-
-#     # Update Session_State
-#     st.session_state.audio_file = recorded_file
-#     print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
-
-#     if recorded_file:
-#         # Render Playback Audio File
-#         st.header("🎧 Recorded File")
-#         st.audio(st.session_state.audio_file)
-
-#     return st.session_state.audio_file if st.session_state.audio_file else None
-  
+ 
 
 def setup_file(col2):
     with col2:
@@ -330,33 +240,6 @@ def transcribe(audio_file, _model):
     
     return transcription
 
-
-
-# This code is based on https://github.com/whitphx/streamlit-webrtc/blob/c1fe3c783c9e8042ce0c95d789e833233fd82e74/sample_utils/turn.py
-@st.cache_data  # type: ignore
-def get_ice_servers():
-    """Use Twilio's TURN server because Streamlit Community Cloud has changed
-    its infrastructure and WebRTC connection cannot be established without TURN server now.  # noqa: E501
-    We considered Open Relay Project (https://www.metered.ca/tools/openrelay/) too,
-    but it is not stable and hardly works as some people reported like https://github.com/aiortc/aiortc/issues/832#issuecomment-1482420656  # noqa: E501
-    See https://github.com/whitphx/streamlit-webrtc/issues/1213
-    """
-
-    # Ref: https://www.twilio.com/docs/stun-turn/api
-    try:
-        account_sid = os.environ["TWILIO_ACCOUNT_SID"]
-        auth_token = os.environ["TWILIO_AUTH_TOKEN"]
-    except KeyError:
-        logger.warning(
-            "Twilio credentials are not set. Fallback to a free STUN server from Google."  # noqa: E501
-        )
-        return [{"urls": ["stun:stun.l.google.com:19302"]}]
-
-    client = Client(account_sid, auth_token)
-
-    token = client.tokens.create()
-
-    return token.ice_servers
 
 # Run
 if __name__ == "__main__":
