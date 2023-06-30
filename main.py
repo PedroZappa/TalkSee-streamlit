@@ -248,10 +248,10 @@ def setup_file(col1, col2):
             if audio_data.size > 0:
                 # Render Playback Audio File
                 st.header("🎧 Uploaded File")
-                st.audio(file_path)
-                print("setup_file() temp file_path:", file_path)
+                st.audio(audio_data)
+                print("setup_file() temp file_path:", audio_data)
                 
-    return uploaded_file if uploaded_file else None
+    return audio_data if audio_data else None
 
 
 def save_uploaded_file(uploaded_file):
