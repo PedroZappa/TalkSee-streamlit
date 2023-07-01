@@ -1,19 +1,21 @@
 # 🗣 ⇢ _`TalkSee`_  ⇢ 👀
 
+
 ## Software Design Document (SDD)
 
 Video Demo: <URL HERE> ...
 
-___
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://talksee.streamlit.app/)
 
+___
 ## _`Table o'Contents`_
 
 - [Introduction](#introduction)
 - [System Overview](#system-overview)
 - [Dependencies](#dependencies)
-- [Features](#features)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Features](#features)
+- [Functionality](#functionality)
 - [Future Enhancements](#future-enhancements)
 
 ___
@@ -58,23 +60,49 @@ The 🗣 ⇢ _`TalkSee`_  ⇢ 👀 web app relies on the following external libr
 
 - [io](https://docs.python.org/3/library/io.html): Provides input/output functionality.
 
-- [tempfile](https://docs.python.org/3/library/tempfile.html): Provides temporary file functionality.
-
-- [threading](https://docs.python.org/3/library/threading.html): Provides threading functionality.
-
 ___
 
 - [Streamlit](https://streamlit.io/): Provides the user interface framework;
 
 - [audio_recorder_streamlit](https://pypi.org/project/audio-recorder-streamlit/): Provides the audio input stream;
 
-- [stqdm](https://pypi.org/project/stqdm/): Provides progress bar display for model loading and recording audio;
-
 - [PyTorch](https://pytorch.org/docs/stable/torch.html): Provides the neural network library for GPU processing;
 
 - [WhisperAI ASR](https://github.com/openai/whisper): Provides the speech recognition functionality;
 
+___
 
+## [Installation](#table-ocontents)
+
+1. Clone the repository:
+
+```sh
+gh repo clone PedroZappa/TalkSee
+```
+
+2. Change the current directory to the cloned repository:
+
+```sh
+cd TalkSee
+```
+
+3. Install the `required packages` from the requirements.txt file:
+
+```sh
+pip install -r requirements.txt
+```
+
+4. Create a `.streamlit/secrets.toml` file in the project directory and add the `MODELS_PATH` variable:
+
+```sh
+touch .streamlit/secrets.toml | echo 'MODELS_PATH="models"' >> .streamlit/secrets.toml
+```
+
+5. Run Streamlit application:
+
+```sh
+streamlit run main.py
+```
 
 ___
 
@@ -98,54 +126,18 @@ ___
 
 - Support for both `microphone input` and audio `file upload`.
 
-- Real-time transcription progress display using `stqdm`.
-
 - Display of the transcribed text to the user.
 
 ___
 
-## [Installation](#table-ocontents)
-
-1. Clone the repository:
-
-```sh
-git clone https://github.com/pedrozappa/talksee.git
-```
-
-2. Change the current directory to the cloned repository:
-
-```sh
-cd talksee
-```
-
-3. Install the `required packages` from the requirements.txt file:
-
-```sh
-pip install -r requirements.txt
-```
-
-4. Create a `.env` file in the project directory and add the `MODELS_PATH` variable:
-
-```sh
-touch .env | echo 'MODELS_PATH=/path/to/whisper/models' >> .env
-```
-
-5. Run Streamlit application:
-
-```sh
-streamlit run app.py
-```
-
-___
-
-## [Usage](#table-ocontents)
+## [Functionality](#table-ocontents)
 
 1. Select `WhisperAI ASR` model from the available options.
 2. Choose an `input mode` (Mic or File).
-    - If using the Mic, click the "Record" button to start recording audio. Click "Stop" when you're done.
-    - If using File, upload an audio file in WAV format.
-3. Click the "Transcribe" button to transcribe the audio.
-4. View the transcribed text in the "Transcription" section.
+    - If using the `Mic`, click the "microphone-icon" button to start recording audio. The recording will stop automatically after 2 seconds of silence.
+    - If using `File`, upload an audio file in `.wav`, `.mp3` or `.m4a` formats.
+3. Click the `Transcribe` button to transcribe the audio file.
+4. Display transcribed text in "`Transcription`" section.
 
 ___
 
@@ -154,6 +146,8 @@ ___
 Some possible future enhancements for 🗣 ⇢ _`TalkSee`_  ⇢ 👀 include:
 
 - Support for `additional speech recognition models`.
+
+- Support for `mobile devices`.
 
 - `Real-time transcription` of live audio input.
 
@@ -169,7 +163,4 @@ ___
 
 [BACK TO TOP](#top)
 
-## TODO -->
 
-- mobile issues
-    - ask browser for mic permission
