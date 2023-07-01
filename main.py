@@ -1,4 +1,4 @@
-import sys, os, time, io
+import os, time, io
 from io import BytesIO
 from pathlib import Path
 

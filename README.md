@@ -1,13 +1,15 @@
 # 🗣 ⇢ _`TalkSee`_  ⇢ 👀
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://talksee.streamlit.app/)
+![Copyright](https://img.shields.io/static/v1.svg?label=TalkSee%20©️%20&message=%202023%20PedroZappa&labelColor=informational&color=033450)
+![MIT License](https://img.shields.io/static/v1.svg?label=📜%20License&message=MIT&color=informational)
 
 ## Software Design Document (SDD)
 
 Video Demo: <URL HERE> ...
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://talksee.streamlit.app/)
-
 ___
+
 ## _`Table o'Contents`_
 
 - [Introduction](#introduction)
@@ -51,8 +53,6 @@ ___
 The 🗣 ⇢ _`TalkSee`_  ⇢ 👀 web app relies on the following external libraries and resources:
 
 - [Python 3.x](https://www.python.org/downloads/)
-
-- [python-dotenv](https://github.com/theskumar/python-dotenv): Provides environment variables.
 
 - [os](https://docs.python.org/3/library/os.html): Provides operating system interface.
 
