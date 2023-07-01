@@ -92,7 +92,7 @@ cd TalkSee
 pip install -r requirements.txt
 ```
 
-4. Create a `.streamlit/secrets.toml` file in the project directory and add the `MODELS_PATH` variable:
+4. Create a `.streamlit/secrets.toml` file and add the desired path to `MODELS_PATH` variable:
 
 ```sh
 touch .streamlit/secrets.toml | echo 'MODELS_PATH="models"' >> .streamlit/secrets.toml
@@ -153,6 +153,8 @@ Some possible future enhancements for 🗣 ⇢ _`TalkSee`_  ⇢ 👀 include:
 
 - Improved error handling and user feedback.
 
+- Support for uploading files from outside the app directory.
+
 - Integration with cloud storage services for seamless file upload and storage.
 
 - `Generate an image` with the transcribed text as a prompt.
@@ -162,5 +164,3 @@ ___
 ___
 
 [BACK TO TOP](#top)
-
-
