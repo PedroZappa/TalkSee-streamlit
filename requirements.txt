@@ -1,6 +1,5 @@
 streamlit
 audio_recorder_streamlit
-streamlit_webrtc
 torch
 whisper
 openai-whisper
