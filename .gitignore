@@ -14,3 +14,4 @@
 
 vector_store/local/index.faiss
 vector_store/local/index.pkl
+.vscode/settings.json
