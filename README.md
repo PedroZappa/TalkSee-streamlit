@@ -1,7 +1,7 @@
 # 🗣 ⇢ _`TalkSee`_  ⇢ 👀
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://talksee.streamlit.app/)
-![Copyright](https://img.shields.io/static/v1.svg?label=TalkSee%20v1.0.0%20&message=%20PZ%202023&labelColor=730DF2&color=000000)
+![Copyright](https://img.shields.io/static/v1.svg?label=TalkSee%20%20v1.0.0%20&message=%20PZ%202023&labelColor=730DF2&color=000000)
 ![MIT License](https://img.shields.io/static/v1.svg?label=📜%20License&message=MIT&color=730DF2)
 
 
@@ -12,7 +12,7 @@ Video Demo: <URL HERE> ...
 
 ___
 
-## _`Table o'Contents`_
+## 🗣 ⇢ _`Table o'Contents`_ ⇢ 👀
 
 - [Introduction](#introduction)
 - [System Overview](#system-overview)
