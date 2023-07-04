@@ -1,8 +1,10 @@
 # 🗣 ⇢ _`TalkSee`_  ⇢ 👀
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://talksee.streamlit.app/)
-![Copyright](https://img.shields.io/static/v1.svg?label=TalkSee%20©️%20&message=%202023%20PedroZappa&labelColor=informational&color=033450)
-![MIT License](https://img.shields.io/static/v1.svg?label=📜%20License&message=MIT&color=informational)
+![Copyright](https://img.shields.io/static/v1.svg?label=TalkSee%20v1.0.0%20&message=%20PZ%202023&labelColor=730DF2&color=000000)
+![MIT License](https://img.shields.io/static/v1.svg?label=📜%20License&message=MIT&color=730DF2)
+
+
 
 ## Software Design Document (SDD)
 
@@ -30,9 +32,13 @@ ___
 
 ## [System Overview](#table-ocontents)
 
+### _GUI_
+
+> The graphical user interface is powered by `Streamlit`.
+
 ### _Model Selection_
 
-> Provides a GUI to to select a `WhisperAI model`.
+> Provides a GUI to to select a `WhisperAI ASR` model.
 
 ### _Audio Input_
 
@@ -145,17 +151,15 @@ ___
 
 Some possible future enhancements for 🗣 ⇢ _`TalkSee`_  ⇢ 👀 include:
 
-- Support for `additional speech recognition models`.
-
 - Support for `mobile devices`.
+
+- Support for `additional speech recognition models`.
 
 - `Real-time transcription` of live audio input.
 
-- Improved error handling and user feedback.
+- Integration with cloud storage services for seamless `file upload and storage`.
 
-- Support for uploading files from outside the app directory.
-
-- Integration with cloud storage services for seamless file upload and storage.
+- Improved `error handling` and `user feedback`.
 
 - `Generate an image` with the transcribed text as a prompt.
 

@@ -1,6 +1,5 @@
 import os, time, io
 from io import BytesIO
-from pathlib import Path
 
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
@@ -95,6 +94,8 @@ def main():
             if input_type == 'Mic':
                 #  Setup User Mic Input
                 audio_data = setup_mic()
+                if audio_data is None: 
+                    st.write("Click 👆 to start mic recording...")
     
             else:
                 #  Setup User File Input
@@ -123,8 +124,8 @@ def main():
             transcription_success.empty()
 
     # Session State DEBUGGER
-    with st.expander("Session State", expanded=False):
-        st.session_state
+    # with st.expander("Session State", expanded=False):
+    #     st.session_state
         
     # main() end # 
     ##############
@@ -165,7 +166,7 @@ def setup_mic():
         text='',
         recording_color="#a34bff",
         neutral_color="#000",
-        icon_name="microphone-lines",
+        icon_name="microphone-lines", 
         icon_size='7x',
         pause_threshold=2.0, 
         sample_rate=41_000
@@ -186,7 +187,6 @@ def setup_mic():
     
         # Update Session_State
         st.session_state.audio_file = recorded_file
-        print("setup_mic() session_state.audio_file:", st.session_state.audio_file)
         
         if recorded_file:
             # Render Playback Audio File
@@ -230,8 +230,6 @@ def transcribe(audio_file, _model):
     print("Transcribing...", audio_file)
     
     if audio_file is not None:
-        
-            
         # Transcribe audio file
         transcription = _model.transcribe(audio_file.name)
         print("audio_file id: ", audio_file.id)
