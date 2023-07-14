@@ -8,8 +8,6 @@
 
 ## Software Design Document (SDD)
 
-Video Demo: <URL HERE> ...
-
 ___
 
 ## 🗣 ⇢ _`Table o'Contents`_ ⇢ 👀
